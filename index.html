@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0a0a0a">
+<title>Auan</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a0a; --card:#1a1a1a; --card2:#262626; --card3:#333;
+  --pink:#ff5fa2; --pink-soft:#ff8cc0; --pink-deep:#3a1828;
+  --mute:#9a9a9a; --red:#ff4d4d;
+  --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
+  --W:min(100vw,460px); --u:calc(var(--W)/1080); --gx:calc((100vw - var(--W))/2);
+  --fsz:min(100%, max(calc(300 * var(--u)), calc(100dvh - var(--sat) - calc(900 * var(--u)))));
+  --fsz2:min(100%, max(calc(300 * var(--u)), calc(100dvh - var(--sat) - calc(760 * var(--u)))));
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+html,body{height:100%;background:#000;color:#fff;font-family:'Prompt',system-ui,-apple-system,'Segoe UI',sans-serif;overflow:hidden;overscroll-behavior:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+svg{display:block;flex:none}
+button:focus-visible{outline:3px solid var(--pink);outline-offset:2px}
+.screen,.page,.fullview{position:fixed;top:0;bottom:0;left:var(--gx);right:var(--gx);background:var(--bg)}
+.screen{display:none;flex-direction:column}
+.screen.on{display:flex}
+.top{display:flex;align-items:center;justify-content:space-between;padding:calc(var(--sat) + calc(28 * var(--u))) calc(56 * var(--u)) 0;height:calc(var(--sat) + calc(170 * var(--u)));flex:none;position:relative}
+.top h1{position:absolute;left:0;right:0;top:calc(var(--sat) + calc(28 * var(--u)));height:calc(120 * var(--u));display:grid;place-items:center;font-size:calc(56 * var(--u));font-weight:600;pointer-events:none}
+.roundbtn{width:calc(120 * var(--u));height:calc(120 * var(--u));border-radius:50%;background:var(--card2);display:grid;place-items:center;position:relative}
+.av{width:calc(120 * var(--u));height:calc(120 * var(--u));border-radius:50%;background:var(--card2) center/cover no-repeat;display:grid;place-items:center;font-weight:700;font-size:calc(50 * var(--u));color:#777;letter-spacing:calc(2 * var(--u));flex:none}
+.badge{position:absolute;top:-calc(16 * var(--u));right:-calc(12 * var(--u));width:calc(52 * var(--u));height:calc(52 * var(--u));border-radius:50%;background:var(--pink);display:grid;place-items:center}
+.pill{height:calc(120 * var(--u));padding:0 calc(54 * var(--u));border-radius:calc(60 * var(--u));background:var(--card2);display:flex;align-items:center;gap:calc(22 * var(--u));font-size:calc(46 * var(--u));font-weight:600}
+
+.finder{width:var(--fsz);aspect-ratio:1/1;align-self:center;margin-top:calc(30 * var(--u));border-radius:calc(110 * var(--u));background:#111;position:relative;overflow:hidden;flex:none}
+.finder.v{width:var(--fsz2);margin-top:calc(var(--sat) + calc(60 * var(--u)))}
+.finder video,.finder img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.finder video.mirror{transform:scaleX(-1)}
+.flashbtn{position:absolute;left:calc(24 * var(--u));top:calc(24 * var(--u));width:calc(96 * var(--u));height:calc(96 * var(--u));border-radius:50%;background:rgba(0,0,0,.4);display:grid;place-items:center;z-index:3}
+.flashbtn.on{background:var(--pink)}
+.camerr{position:absolute;inset:0;display:none;flex-direction:column;gap:calc(36 * var(--u));align-items:center;justify-content:center;text-align:center;padding:calc(60 * var(--u));color:var(--mute);font-size:calc(42 * var(--u));z-index:2}
+.camerr.on{display:flex}
+.btn{background:var(--pink);color:#fff;padding:calc(24 * var(--u)) calc(60 * var(--u));border-radius:calc(80 * var(--u));font-weight:600;font-size:calc(44 * var(--u))}
+.controls{flex:1;display:flex;align-items:center;justify-content:space-around;padding:0 calc(90 * var(--u));min-height:calc(260 * var(--u))}
+.ctl{width:calc(150 * var(--u));height:calc(150 * var(--u));display:grid;place-items:center}
+.shutter{width:calc(256 * var(--u));height:calc(256 * var(--u));border-radius:50%;border:calc(12 * var(--u)) solid var(--pink);display:grid;place-items:center}
+.shutter i{display:block;width:calc(206 * var(--u));height:calc(206 * var(--u));border-radius:50%;background:#fff;border:calc(8 * var(--u)) solid #000;transition:transform .1s}
+.shutter:active i{transform:scale(.9)}
+.histlabel{text-align:center;font-weight:600;font-size:calc(44 * var(--u));display:flex;justify-content:center;align-items:center;gap:calc(12 * var(--u));padding-bottom:calc(20 * var(--u));flex:none}
+.spacer-nav{height:calc(var(--sab) + calc(240 * var(--u)));flex:none}
+.flashwhite{position:fixed;inset:0;background:#fff;z-index:60;opacity:0;pointer-events:none;transition:opacity .15s}
+.flashwhite.on{opacity:.95}
+
+.nav{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--sab) + calc(44 * var(--u)));display:flex;gap:calc(6 * var(--u));padding:calc(14 * var(--u));background:var(--card);border-radius:calc(100 * var(--u));z-index:20}
+.nav button{width:calc(180 * var(--u));height:calc(130 * var(--u));border-radius:calc(70 * var(--u));display:grid;place-items:center;color:#777}
+.nav button.on{background:var(--card3);color:#fff}
+body.hidenav .nav,body.hidenav .fab{display:none}
+
+.scroll{flex:1;overflow-y:auto;padding:0 calc(66 * var(--u));-webkit-overflow-scrolling:touch}
+.month{background:var(--card);border-radius:calc(80 * var(--u));padding:calc(56 * var(--u)) calc(42 * var(--u)) calc(46 * var(--u))}
+.month h2{font-size:calc(56 * var(--u));font-weight:600;margin:0 0 calc(34 * var(--u)) calc(8 * var(--u))}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:calc(14 * var(--u))}
+.cell{aspect-ratio:1/1;position:relative;display:grid;place-items:center}
+.cell.dot::after{content:"";width:30%;height:30%;border-radius:50%;background:#2a2a2a}
+.cell.future{background:var(--card2);border-radius:calc(26 * var(--u))}
+.cell.today{border:calc(8 * var(--u)) solid var(--pink);background:var(--pink-deep);border-radius:calc(28 * var(--u))}
+.cell.photo{border-radius:calc(26 * var(--u));overflow:hidden;cursor:pointer;background:#222 center/cover no-repeat}
+.cell.photo.today{border:calc(8 * var(--u)) solid var(--pink)}
+.cell .cnt{position:absolute;right:calc(6 * var(--u));bottom:calc(6 * var(--u));background:rgba(0,0,0,.65);border-radius:calc(20 * var(--u));font-size:calc(28 * var(--u));padding:0 calc(12 * var(--u))}
+.conn{display:flex;justify-content:center;padding:calc(20 * var(--u)) 0}
+.stats{margin:calc(14 * var(--u)) auto 0;width:max-content;max-width:100%;background:var(--card);border-radius:calc(80 * var(--u));padding:calc(36 * var(--u)) calc(56 * var(--u));display:flex;align-items:center;gap:calc(36 * var(--u));font-size:calc(50 * var(--u));font-weight:600;color:#c9c9c9}
+.stats span{display:flex;align-items:center;gap:calc(18 * var(--u))}
+.stats hr{width:calc(4 * var(--u));height:calc(56 * var(--u));border:0;background:#333}
+
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(20 * var(--u));color:var(--mute);text-align:center;padding:0 calc(110 * var(--u));font-size:calc(38 * var(--u));line-height:1.5}
+.empty b{font-size:calc(48 * var(--u));color:#ccc}
+.fab{position:fixed;right:calc(var(--gx) + calc(55 * var(--u)));bottom:calc(var(--sab) + calc(50 * var(--u)));width:calc(148 * var(--u));height:calc(148 * var(--u));border-radius:50%;background:var(--pink);display:grid;place-items:center;z-index:21}
+
+.page{display:none;flex-direction:column;z-index:40}
+.page.on{display:flex}
+.page .scroll{padding:0 calc(44 * var(--u)) calc(var(--sab) + calc(60 * var(--u)))}
+.back{width:calc(120 * var(--u));height:calc(120 * var(--u));display:grid;place-items:center;margin:calc(var(--sat) + calc(20 * var(--u))) 0 0 calc(30 * var(--u));flex:none}
+.prof{display:flex;flex-direction:column;align-items:center;gap:calc(26 * var(--u));padding:0 0 calc(44 * var(--u))}
+.prof .av{width:calc(320 * var(--u));height:calc(320 * var(--u));font-size:calc(110 * var(--u));border:calc(10 * var(--u)) solid #1c1c1c;box-shadow:0 0 0 calc(8 * var(--u)) #2a2a2a}
+.prof h2{font-size:calc(62 * var(--u));font-weight:600}
+.link{color:var(--pink);font-weight:500;font-size:calc(46 * var(--u))}
+.promo{background:var(--pink-deep);border-radius:calc(80 * var(--u));padding:calc(54 * var(--u)) calc(52 * var(--u));display:flex;align-items:center;gap:calc(40 * var(--u));margin-bottom:calc(26 * var(--u));width:100%}
+.promo b{display:block;font-size:calc(56 * var(--u));color:var(--pink-soft);font-weight:600}
+.promo small{font-size:calc(48 * var(--u));color:#b88aa0}
+.box{background:var(--card);border-radius:calc(70 * var(--u));padding:calc(48 * var(--u));display:flex;align-items:center;gap:calc(30 * var(--u));margin-bottom:calc(26 * var(--u));width:100%}
+.box b{font-size:calc(52 * var(--u));font-weight:600;display:block}
+.box small{font-size:calc(48 * var(--u));color:var(--mute);word-break:break-all}
+.sec{font-size:calc(62 * var(--u));font-weight:600;margin:calc(70 * var(--u)) 0 calc(16 * var(--u))}
+.row{display:flex;align-items:center;gap:calc(44 * var(--u));padding:calc(40 * var(--u)) calc(8 * var(--u));font-size:calc(52 * var(--u));font-weight:500;width:100%;text-align:left}
+.row small{display:block;color:var(--mute);font-size:calc(44 * var(--u));font-weight:400}
+.row.red{color:var(--red)}
+.switch{margin-left:auto;width:calc(190 * var(--u));height:calc(104 * var(--u));border-radius:calc(52 * var(--u));background:#333;position:relative;flex:none;transition:.2s}
+.switch::after{content:"";position:absolute;top:calc(10 * var(--u));left:calc(10 * var(--u));width:calc(84 * var(--u));height:calc(84 * var(--u));border-radius:50%;background:#fff;transition:.2s}
+.switch.on{background:var(--pink)}
+.switch.on::after{left:calc(96 * var(--u))}
+
+.fullview{z-index:50;display:none;flex-direction:column;align-items:center}
+.fullview.on{display:flex}
+.fullview .cap{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(40 * var(--u));max-width:86%;background:rgba(0,0,0,.45);padding:calc(20 * var(--u)) calc(44 * var(--u));border-radius:calc(60 * var(--u));font-size:calc(44 * var(--u));text-align:center}
+.fullview input{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(40 * var(--u));width:84%;background:rgba(0,0,0,.5);border:0;color:#fff;font:inherit;font-size:calc(44 * var(--u));text-align:center;padding:calc(24 * var(--u)) calc(40 * var(--u));border-radius:calc(60 * var(--u));outline:0}
+.fullview input::placeholder{color:#ddd}
+.vbar{display:flex;align-items:center;justify-content:space-around;width:100%;padding:0 calc(30 * var(--u));margin-top:auto;margin-bottom:calc(var(--sab) + calc(70 * var(--u)))}
+.vdate{margin-top:calc(50 * var(--u));font-size:calc(44 * var(--u));color:var(--mute)}
+.save{width:calc(220 * var(--u));height:calc(220 * var(--u));border-radius:50%;background:var(--pink);display:grid;place-items:center}
+
+.sheetbg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:45;display:none;justify-content:center;align-items:flex-end}
+.sheetbg.on{display:flex}
+.sheet{width:var(--W);background:#232323;border-radius:calc(90 * var(--u)) calc(90 * var(--u)) 0 0;padding:calc(36 * var(--u)) calc(44 * var(--u)) calc(var(--sab) + calc(60 * var(--u)));min-height:46%}
+.sheet .grab{width:calc(190 * var(--u));height:calc(14 * var(--u));border-radius:calc(8 * var(--u));background:#555;margin:0 auto calc(56 * var(--u))}
+.sheet h3{text-align:center;font-size:calc(84 * var(--u));font-weight:700;margin-bottom:calc(12 * var(--u))}
+.sheet p{text-align:center;color:var(--mute);font-size:calc(42 * var(--u));margin-bottom:calc(40 * var(--u))}
+.search{background:#333;border-radius:calc(90 * var(--u));padding:calc(44 * var(--u)) calc(56 * var(--u));color:#888;font-size:calc(50 * var(--u));display:flex;gap:calc(36 * var(--u));align-items:center;margin-bottom:calc(40 * var(--u))}
+.tip{border:calc(6 * var(--u)) solid #333;border-radius:calc(70 * var(--u));padding:calc(48 * var(--u));display:flex;gap:calc(36 * var(--u));align-items:center}
+.tip b{font-size:calc(50 * var(--u));display:block}.tip small{color:var(--mute);font-size:calc(42 * var(--u))}
+.toast{position:fixed;left:50%;top:calc(var(--sat) + calc(30 * var(--u)));transform:translate(-50%,-30px);opacity:0;pointer-events:none;background:#fff;color:#111;padding:calc(26 * var(--u)) calc(54 * var(--u));border-radius:calc(80 * var(--u));font-weight:600;font-size:calc(42 * var(--u));z-index:90;transition:.3s;max-width:90%;text-align:center}
+.toast.on{transform:translate(-50%,0);opacity:1}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<section class="screen on" id="s-home">
+  <div class="top">
+    <button class="roundbtn" id="btnHint" aria-label="แนะนำ">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="#fff"><path d="M3 10v4a1 1 0 0 0 1 1h2l5 4V5L6 9H4a1 1 0 0 0-1 1zm13.5 2a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>
+      <span class="badge"><svg width="14" height="14" viewBox="0 0 24 24" stroke="#000" stroke-width="3.5" stroke-linecap="round"><path d="M12 4v16M4 12h16"/></svg></span>
+    </button>
+    <button class="pill" id="btnFriends">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="#fff"><circle cx="9" cy="8" r="3.6"/><path d="M2 19c0-3.5 3-5.6 7-5.6s7 2.1 7 5.6z"/><circle cx="17" cy="9" r="2.8"/><path d="M17.5 13.4c2.6.2 4.5 1.8 4.5 4.6h-4c0-1.9-.2-3.4-.5-4.6z"/></svg>
+      <span id="pillTxt">ฉันคนเดียว</span>
+    </button>
+    <button class="av" data-profile aria-label="โปรไฟล์"></button>
+  </div>
+
+  <div class="finder" id="finder">
+    <video id="video" autoplay playsinline muted></video>
+    <button class="flashbtn" id="btnFlash" aria-label="แฟลช"><svg width="30" height="30" viewBox="0 0 24 24" fill="#fff"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg></button>
+    <div class="camerr" id="camErr"><div id="camMsg">กำลังเปิดกล้อง...</div><button class="btn" id="btnAllow">เปิดกล้อง</button></div>
+  </div>
+
+  <div class="controls">
+    <button class="ctl" id="btnPick" aria-label="เลือกรูปจากแกลเลอรี">
+      <svg width="52" height="52" viewBox="0 0 24 24" fill="#fff"><path d="M7 3h11a2 2 0 0 1 2 2v1H7a2 2 0 0 0-2 2v9H4a1 1 0 0 1-1-1V7a4 4 0 0 1 4-4z" opacity=".9"/><rect x="6" y="7" width="15" height="14" rx="3"/><circle cx="11" cy="11.5" r="1.6" fill="#0a0a0a"/><path d="m7 19 4-4 3 3 2-2 4 4z" fill="#0a0a0a"/></svg>
+    </button>
+    <button class="shutter" id="btnShot" aria-label="ถ่ายรูป"><i></i></button>
+    <button class="ctl" id="btnFlip" aria-label="สลับกล้อง">
+      <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 11a8.5 8.5 0 0 1 14.5-4.5L20 8.5M20 4v4.5h-4.5M20.5 13a8.5 8.5 0 0 1-14.5 4.5L4 15.5M4 20v-4.5h4.5"/></svg>
+    </button>
+  </div>
+  <div class="histlabel" id="histBtn" role="button">ประวัติ <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 9 7 7 7-7"/></svg></div>
+  <div class="spacer-nav"></div>
+</section>
+
+<!-- MEMORIES -->
+<section class="screen" id="s-mem">
+  <div class="top"><h1>Memories</h1><span></span><button class="av" data-profile aria-label="โปรไฟล์"></button></div>
+  <div class="scroll" id="memScroll"><div id="months"></div>
+    <div class="stats"><span><svg width="34" height="34" viewBox="0 0 24 24"><path d="M12 21C5 15.5 3 12 3 8.8A4.8 4.8 0 0 1 12 6.5a4.8 4.8 0 0 1 9 2.3C21 12 19 15.5 12 21z" fill="#ff5fa2"/></svg><b id="stTotal">0 Auan</b></span><hr><span><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#ff5fa2" stroke-width="2.2" stroke-linejoin="round"><path d="M12 2.5c1 3-1 4-1 6 0 1.5 1 2 2 2s2-1 1.5-3c3 2 5 5 5 8a7.5 7.5 0 0 1-15 0c0-3 1.5-4.5 3-6 0 2 1 3 2 3 0-3 0-7 2.5-10z" fill="#ff5fa2" fill-opacity=".25"/></svg><b id="stStreak">0d streak</b></span></div>
+    <div style="height:calc(var(--sab) + 130px)"></div>
+  </div>
+</section>
+
+<!-- CHAT -->
+<section class="screen" id="s-chat">
+  <div class="top"><h1>แช็ต</h1><span></span><button class="av" data-profile aria-label="โปรไฟล์"></button></div>
+  <div class="empty">
+    <svg width="56" height="56" viewBox="0 0 24 24" fill="#333"><path d="M12 3C6.5 3 2 6.6 2 11c0 2.4 1.3 4.5 3.4 6L5 21l4-2c1 .3 2 .4 3 .4 5.5 0 10-3.6 10-8S17.5 3 12 3z"/></svg>
+    <b style="color:#ccc;font-size:22px">ยังไม่มีแช็ต</b>
+    <span>ระบบแช็ตและส่งรูปหาเพื่อนต้องมีเซิร์ฟเวอร์ (เช่น Firebase) จะเพิ่มทีหลังได้</span>
+  </div>
+  <button class="fab" id="btnCompose" aria-label="แช็ตใหม่"><svg width="34" height="34" viewBox="0 0 24 24" fill="#000"><path d="M3 17.3V21h3.7L17.8 9.9l-3.7-3.7zM20.7 7a1 1 0 0 0 0-1.4l-2.3-2.3a1 1 0 0 0-1.4 0l-1.8 1.8 3.7 3.7z"/></svg></button>
+</section>
+
+<div class="nav" id="nav">
+  <button data-go="mem" aria-label="Memories"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="5"/><g fill="#1a1a1a"><circle cx="8" cy="9" r="1.3"/><circle cx="12" cy="9" r="1.3"/><circle cx="16" cy="9" r="1.3"/><circle cx="8" cy="13" r="1.3"/><circle cx="12" cy="13" r="1.3"/><circle cx="16" cy="13" r="1.3"/><circle cx="8" cy="17" r="1.3"/><circle cx="12" cy="17" r="1.3"/><circle cx="16" cy="17" r="1.3"/></g></svg></button>
+  <button data-go="home" class="on" aria-label="Home"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.8 3 10.5V20a1 1 0 0 0 1 1h5v-6h6v6h5a1 1 0 0 0 1-1v-9.5z"/></svg></button>
+  <button data-go="chat" aria-label="Chat"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.5 3 2 6.6 2 11c0 2.4 1.3 4.5 3.4 6L5 21l4-2c1 .3 2 .4 3 .4 5.5 0 10-3.6 10-8S17.5 3 12 3z"/></svg></button>
+</div>
+
+<!-- PROFILE PAGE -->
+<section class="page" id="p-profile">
+  <button class="back" id="pBack" aria-label="กลับ"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H4m6-7-7 7 7 7"/></svg></button>
+  <div class="scroll">
+    <div class="prof">
+      <div class="av" id="bigAv"></div>
+      <h2 id="pName">Auan</h2>
+      <button class="link" id="btnEditPhoto">แก้ไขรูป</button>
+    </div>
+    <div class="promo"><svg width="30" height="30" viewBox="0 0 24 24"><path d="M12 21C5 15.5 3 12 3 8.8A4.8 4.8 0 0 1 12 6.5a4.8 4.8 0 0 1 9 2.3C21 12 19 15.5 12 21z" fill="#ff5fa2"/></svg><div><b>Auan Pink</b><small>ธีมสีชมพูเปิดใช้งานแล้ว</small></div></div>
+    <button class="box" id="btnShare"><div style="flex:1;text-align:left"><b>เชิญเพื่อนมาใช้ Auan!</b><small id="shareUrl"></small></div><svg width="34" height="34" viewBox="0 0 24 24" fill="#ccc"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8 11 8-5m-8 7 8 5" stroke="#ccc" stroke-width="2" fill="none"/></svg></button>
+
+    <div class="sec">การตั้งค่า</div>
+    <button class="row" id="rowStreak"><svg width="34" height="34" viewBox="0 0 24 24" fill="#bbb"><path d="M12 2.5c1 3-1 4-1 6 0 1.5 1 2 2 2s2-1 1.5-3c3 2 5 5 5 8a7.5 7.5 0 0 1-15 0c0-3 1.5-4.5 3-6 0 2 1 3 2 3 0-3 0-7 2.5-10z"/></svg>แสดง Streak<span class="switch on" id="swStreak"></span></button>
+    <button class="row" id="rowInstall"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m-5-5 5 5 5-5M5 20h14"/></svg><div>ติดตั้งแอป<small>เพิ่มลงหน้าจอหลัก</small></div></button>
+
+    <div class="sec">ทั่วไป</div>
+    <button class="row" id="rowName"><svg width="34" height="34" viewBox="0 0 24 24" fill="#bbb"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="12" cy="10" r="3" fill="#0a0a0a"/><path d="M6.5 18c.5-2.5 2.8-3.5 5.5-3.5s5 1 5.5 3.5z" fill="#0a0a0a"/></svg><div>แก้ไขชื่อ<small id="rName"></small></div></button>
+    <button class="row" id="rowBday"><svg width="34" height="34" viewBox="0 0 24 24" fill="#bbb"><path d="M11 2h2v3h-2zM4 12h16v3H4zM5 16h14v5H5zM6 8h12v3H6z"/></svg><div>Edit birthday<small id="rBday"></small></div></button>
+
+    <div class="sec">สนับสนุน</div>
+    <button class="row" id="rowAbout"><svg width="34" height="34" viewBox="0 0 24 24" fill="#bbb"><circle cx="12" cy="12" r="10"/><path d="M12 17v-1c0-1.5 2.5-2 2.5-4a2.5 2.5 0 0 0-5 0" stroke="#0a0a0a" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="12" cy="19.5" r="0" /></svg>เกี่ยวกับ Auan</button>
+
+    <div class="sec">เขตอันตราย</div>
+    <button class="row red" id="rowClear"><svg width="34" height="34" viewBox="0 0 24 24" fill="#ff4d4d"><path d="M9 3h6l1 2h4v3H4V5h4zM5 9h14l-1 12H6z"/></svg>ลบรูปทั้งหมด</button>
+  </div>
+</section>
+
+<!-- FRIENDS SHEET -->
+<div class="sheetbg" id="sheetBg"><div class="sheet" onclick="event.stopPropagation()">
+  <div class="grab"></div>
+  <h3>เพื่อนของคุณ</h3><p>ตอนนี้รูปทั้งหมดเก็บไว้ในเครื่องของคุณเท่านั้น</p>
+  <div class="search"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>เพิ่มเพื่อนใหม่</div>
+  <div class="tip"><svg width="40" height="40" viewBox="0 0 24 24" fill="#ccc"><circle cx="9" cy="8" r="4"/><path d="M2 20c0-4 3-6 7-6s7 2 7 6z"/></svg><div><b>ส่งรูปหาเพื่อนยังไม่เปิดใช้</b><small>ต้องเชื่อมต่อเซิร์ฟเวอร์ (เช่น Firebase) ก่อน</small></div></div>
+</div></div>
+
+<!-- PREVIEW (after capture) -->
+<section class="fullview" id="preview">
+  <div class="finder v"><img id="pvImg" alt=""><input id="pvCap" maxlength="60" placeholder="เพิ่มข้อความ..."></div>
+  <div class="vbar">
+    <button class="ctl" id="pvCancel" aria-label="ถ่ายใหม่"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M5 5l14 14M19 5 5 19"/></svg></button>
+    <button class="save" id="pvSave" aria-label="บันทึก"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 5 5L20 6"/></svg></button>
+    <button class="ctl" id="pvDl" aria-label="ดาวน์โหลด"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m-5-5 5 5 5-5M5 20h14"/></svg></button>
+  </div>
+</section>
+
+<!-- VIEWER (from calendar) -->
+<section class="fullview" id="viewer">
+  <div class="finder v"><img id="vwImg" alt=""><div class="cap" id="vwCap" style="display:none"></div></div>
+  <div class="vdate" id="vwDate"></div>
+  <div class="vbar">
+    <button class="ctl" id="vwClose" aria-label="ปิด"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M5 5l14 14M19 5 5 19"/></svg></button>
+    <button class="ctl" id="vwPrev" aria-label="ก่อนหน้า"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg></button>
+    <button class="ctl" id="vwNext" aria-label="ถัดไป"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg></button>
+    <button class="ctl" id="vwDl" aria-label="ดาวน์โหลด"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m-5-5 5 5 5-5M5 20h14"/></svg></button>
+    <button class="ctl" id="vwDel" aria-label="ลบ"><svg width="48" height="48" viewBox="0 0 24 24" fill="#ff4d4d"><path d="M9 3h6l1 2h4v3H4V5h4zM5 9h14l-1 12H6z"/></svg></button>
+  </div>
+</section>
+
+<div class="flashwhite" id="flashWhite"></div>
+<div class="toast" id="toast"></div>
+<input type="file" id="filePick" accept="image/*" hidden>
+<input type="file" id="avPick" accept="image/*" hidden>
+
+<script>
+'use strict';
+/* ---------- helpers ---------- */
+function scaleSvgs(){
+  document.querySelectorAll('svg[width]').forEach(v=>{
+    if(v.dataset.sc) return; const w=v.getAttribute('width'), h=v.getAttribute('height');
+    if(!w || /%/.test(w)) return;
+    v.style.width=`calc(${w} * 2.4 * var(--u))`; v.style.height=`calc(${h} * 2.4 * var(--u))`; v.dataset.sc=1;
+  });
+}
+
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const pad = n => String(n).padStart(2,'0');
+const dkey = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const LS = { get:(k,d)=>{try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}}, set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}} };
+let toastT;
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2600)}
+
+/* ---------- IndexedDB ---------- */
+let dbp;
+function db(){ if(dbp) return dbp; dbp = new Promise((res,rej)=>{
+  const r = indexedDB.open('auan',1);
+  r.onupgradeneeded = () => { const s=r.result.createObjectStore('photos',{keyPath:'id',autoIncrement:true}); s.createIndex('date','date'); };
+  r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+}); return dbp; }
+async function tx(mode, fn){ const d=await db(); return new Promise((res,rej)=>{ const t=d.transaction('photos',mode); const out=fn(t.objectStore('photos')); t.oncomplete=()=>res(out&&out.result!==undefined?out.result:undefined); t.onerror=()=>rej(t.error); }); }
+const dbAll = () => tx('readonly', s => s.getAll());
+const dbAdd = p => tx('readwrite', s => s.add(p));
+const dbDel = id => tx('readwrite', s => s.delete(id));
+const dbClear = () => tx('readwrite', s => s.clear());
+
+/* ---------- state ---------- */
+let photos = [];            // all photos sorted by ts
+let byDay = {};             // dateKey -> [photos]
+const thumbURLs = {};
+let settings = { name: LS.get('auan_name','Auan'), bday: LS.get('auan_bday',''), streak: LS.get('auan_streak',true), avatar: LS.get('auan_avatar','') };
+
+async function reload(){
+  photos = (await dbAll()).sort((a,b)=>a.ts-b.ts);
+  byDay = {};
+  Object.values(thumbURLs).forEach(u=>URL.revokeObjectURL(u));
+  for(const k in thumbURLs) delete thumbURLs[k];
+  photos.forEach(p => { (byDay[p.date] = byDay[p.date] || []).push(p); thumbURLs[p.id] = URL.createObjectURL(p.thumb || p.blob); });
+  renderMemories(); renderStats();
+}
+
+/* ---------- navigation ---------- */
+let cur = 'home';
+function go(name){
+  cur = name;
+  $$('.screen').forEach(s => s.classList.toggle('on', s.id === 's-'+name));
+  $$('.nav button').forEach(b => b.classList.toggle('on', b.dataset.go === name));
+  if(name === 'home') startCam(); else stopCam();
+  if(name === 'mem'){ renderMemories(); setTimeout(()=>{const s=$('#memScroll'); s.scrollTop = s.scrollHeight;},30); }
+}
+$$('.nav button').forEach(b => b.onclick = () => go(b.dataset.go));
+$('#histBtn').onclick = () => go('mem');
+$('#btnCompose').onclick = () => toast('ระบบแช็ตยังไม่เปิดใช้ ต้องมีเซิร์ฟเวอร์ก่อน');
+$('#btnHint').onclick = () => toast('วิดเจ็ตหน้าจอหลักต้องใช้แอปมือถือจริง');
+$('#btnFriends').onclick = () => $('#sheetBg').classList.add('on');
+$('#sheetBg').onclick = () => $('#sheetBg').classList.remove('on');
+
+/* ---------- camera ---------- */
+let stream = null, facing = 'environment', torchOn = false, camBusy = false;
+const video = $('#video');
+async function startCam(){
+  if(camBusy || stream) return;
+  camBusy = true;
+  const err = $('#camErr');
+  try{
+    if(!navigator.mediaDevices?.getUserMedia) throw new Error('nosupport');
+    stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ideal:facing}, width:{ideal:1920}, height:{ideal:1920} }, audio:false });
+    video.srcObject = stream;
+    video.classList.toggle('mirror', facing === 'user');
+    err.classList.remove('on');
+    applyTorch();
+  }catch(e){
+    $('#camMsg').textContent = e.message === 'nosupport' ? 'เบราว์เซอร์นี้ไม่รองรับกล้อง (ต้องเปิดผ่าน https)' : 'ไม่ได้รับอนุญาตให้ใช้กล้อง กดปุ่มด้านล่างแล้วอนุญาต';
+    err.classList.add('on');
+  }
+  camBusy = false;
+}
+function stopCam(){ if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; video.srcObject=null; } }
+async function applyTorch(){
+  const t = stream?.getVideoTracks()[0]; if(!t) return;
+  try{ const caps = t.getCapabilities?.(); if(caps && caps.torch) await t.applyConstraints({ advanced:[{torch:torchOn}] }); }catch(e){}
+}
+$('#btnAllow').onclick = startCam;
+$('#btnFlip').onclick = () => { facing = facing==='user' ? 'environment' : 'user'; stopCam(); startCam(); };
+$('#btnFlash').onclick = () => { torchOn = !torchOn; $('#btnFlash').classList.toggle('on', torchOn); applyTorch(); };
+
+function squareCanvas(src, sw, sh, mirror, size=1080){
+  const s = Math.min(sw, sh), sx = (sw-s)/2, sy = (sh-s)/2;
+  const c = document.createElement('canvas'); c.width = c.height = Math.min(size, s);
+  const x = c.getContext('2d');
+  if(mirror){ x.translate(c.width,0); x.scale(-1,1); }
+  x.drawImage(src, sx, sy, s, s, 0, 0, c.width, c.height);
+  return c;
+}
+const toBlob = (c,q=.9) => new Promise(r => c.toBlob(r,'image/jpeg',q));
+
+let pending = null;   // {blob, thumb}
+async function showPreview(canvas){
+  const blob = await toBlob(canvas), tc = document.createElement('canvas'); tc.width=tc.height=300;
+  tc.getContext('2d').drawImage(canvas,0,0,300,300);
+  pending = { blob, thumb: await toBlob(tc,.8) };
+  $('#pvImg').src = URL.createObjectURL(blob);
+  $('#pvCap').value = '';
+  $('#preview').classList.add('on'); document.body.classList.add('hidenav');
+}
+$('#btnShot').onclick = async () => {
+  if(!stream || !video.videoWidth){ toast('กล้องยังไม่พร้อม'); return; }
+  const t = stream.getVideoTracks()[0]; const hasTorch = !!t.getCapabilities?.().torch;
+  if(torchOn && !hasTorch){ const w=$('#flashWhite'); w.classList.add('on'); await new Promise(r=>setTimeout(r,200)); }
+  const c = squareCanvas(video, video.videoWidth, video.videoHeight, facing==='user');
+  $('#flashWhite').classList.remove('on');
+  showPreview(c);
+};
+$('#btnPick').onclick = () => $('#filePick').click();
+$('#filePick').onchange = async e => {
+  const f = e.target.files[0]; e.target.value=''; if(!f) return;
+  try{ const bmp = await createImageBitmap(f); showPreview(squareCanvas(bmp, bmp.width, bmp.height, false)); }catch(err){ toast('เปิดรูปนี้ไม่ได้'); }
+};
+function closePreview(){ $('#preview').classList.remove('on'); document.body.classList.remove('hidenav'); pending=null; }
+$('#pvCancel').onclick = closePreview;
+$('#pvSave').onclick = async () => {
+  if(!pending) return;
+  const now = new Date();
+  await dbAdd({ date: dkey(now), ts: now.getTime(), caption: $('#pvCap').value.trim(), blob: pending.blob, thumb: pending.thumb });
+  closePreview(); await reload(); toast('บันทึกแล้ว 💗');
+};
+function download(blob, name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),2000); }
+$('#pvDl').onclick = () => pending && download(pending.blob, `auan-${Date.now()}.jpg`);
+
+/* ---------- memories / calendar ---------- */
+const connSVG = flip => `<svg width="90" height="32" viewBox="0 0 110 40" fill="none" stroke="#3a3a3a" stroke-width="5" stroke-linecap="round" stroke-dasharray="1 11" ${flip?'transform="scale(-1,1)"':''}><path d="M30 6c12 20 40 6 52 26"/></svg>`;
+function renderMemories(){
+  const wrap = $('#months'); wrap.innerHTML = '';
+  const now = new Date(), today = dkey(now);
+  let start = new Date(now.getFullYear(), now.getMonth()-1, 1);
+  if(photos.length){ const f = new Date(photos[0].ts); const fm = new Date(f.getFullYear(), f.getMonth(), 1); if(fm < start) start = fm; }
+  const end = new Date(now.getFullYear(), now.getMonth(), 1);
+  let i = 0;
+  for(let m = new Date(start); m <= end; m = new Date(m.getFullYear(), m.getMonth()+1, 1), i++){
+    if(i){ const c=document.createElement('div'); c.className='conn'; c.innerHTML=connSVG(i%2); wrap.appendChild(c); }
+    const card = document.createElement('div'); card.className='month';
+    card.innerHTML = `<h2>${MONTHS[m.getMonth()]} ${m.getFullYear()}</h2>`;
+    const g = document.createElement('div'); g.className='grid';
+    const first = m.getDay(), days = new Date(m.getFullYear(), m.getMonth()+1, 0).getDate();
+    for(let b=0;b<first;b++){ const e=document.createElement('div'); e.className='cell'; g.appendChild(e); }
+    for(let d=1; d<=days; d++){
+      const k = `${m.getFullYear()}-${pad(m.getMonth()+1)}-${pad(d)}`;
+      const cell = document.createElement('div'); cell.className='cell';
+      const list = byDay[k];
+      if(list){
+        const last = list[list.length-1];
+        cell.classList.add('photo'); cell.style.backgroundImage = `url(${thumbURLs[last.id]})`;
+        if(list.length>1) cell.innerHTML = `<span class="cnt">${list.length}</span>`;
+        cell.onclick = () => openViewer(k);
+        if(k===today) cell.classList.add('today');
+      } else if(k === today){ cell.classList.add('today'); cell.innerHTML = '<svg width="44%" height="44%" viewBox="0 0 24 24" stroke="#ff5fa2" stroke-width="3.5" stroke-linecap="round"><path d="M12 4v16M4 12h16"/></svg>'; cell.onclick=()=>go('home'); }
+      else if(k > today) cell.classList.add('future');
+      else cell.classList.add('dot');
+      g.appendChild(cell);
+    }
+    card.appendChild(g); wrap.appendChild(card);
+  }
+  scaleSvgs();
+}
+function calcStreak(){
+  let d = new Date(); if(!byDay[dkey(d)]) d.setDate(d.getDate()-1);
+  let n = 0; while(byDay[dkey(d)]){ n++; d.setDate(d.getDate()-1); } return n;
+}
+function renderStats(){
+  $('#stTotal').textContent = `${photos.length} Auan`;
+  $('#stStreak').textContent = `${calcStreak()}d streak`;
+  $('#stStreak').closest('span').style.display = settings.streak ? '' : 'none';
+  $('.stats hr').style.display = settings.streak ? '' : 'none';
+}
+
+/* viewer */
+let vList = [], vIdx = 0, vUrl = '';
+function openViewer(k){ vList = byDay[k] || []; vIdx = vList.length-1; if(!vList.length) return; showV(); $('#viewer').classList.add('on'); document.body.classList.add('hidenav'); }
+function showV(){
+  const p = vList[vIdx]; if(vUrl) URL.revokeObjectURL(vUrl);
+  vUrl = URL.createObjectURL(p.blob); $('#vwImg').src = vUrl;
+  const d = new Date(p.ts);
+  $('#vwDate').textContent = `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}  ${pad(d.getHours())}:${pad(d.getMinutes())}` + (vList.length>1 ? `  (${vIdx+1}/${vList.length})` : '');
+  const c = $('#vwCap'); c.style.display = p.caption ? '' : 'none'; c.textContent = p.caption || '';
+  $('#vwPrev').style.visibility = $('#vwNext').style.visibility = vList.length>1 ? 'visible' : 'hidden';
+}
+$('#vwClose').onclick = () => { $('#viewer').classList.remove('on'); document.body.classList.remove('hidenav'); };
+$('#vwPrev').onclick = () => { vIdx = (vIdx-1+vList.length)%vList.length; showV(); };
+$('#vwNext').onclick = () => { vIdx = (vIdx+1)%vList.length; showV(); };
+$('#vwDl').onclick = () => download(vList[vIdx].blob, `auan-${vList[vIdx].date}-${vList[vIdx].ts}.jpg`);
+$('#vwDel').onclick = async () => {
+  if(!confirm('ลบรูปนี้?')) return;
+  await dbDel(vList[vIdx].id); $('#vwClose').onclick(); await reload(); toast('ลบรูปแล้ว');
+};
+
+/* ---------- profile ---------- */
+function initials(n){ const w = n.trim().split(/\s+/).filter(Boolean); if(!w.length) return 'A'; return (w[0][0] + (w[1]?w[1][0]:'')).toUpperCase(); }
+function renderProfile(){
+  $$('.av').forEach(a => { if(settings.avatar){ a.style.backgroundImage=`url(${settings.avatar})`; a.textContent=''; } else { a.style.backgroundImage=''; a.textContent = initials(settings.name); } });
+  $('#pName').textContent = settings.name; $('#rName').textContent = settings.name;
+  $('#rBday').textContent = settings.bday || 'ยังไม่ได้ตั้งค่า';
+  $('#swStreak').classList.toggle('on', settings.streak);
+  $('#shareUrl').textContent = location.href.replace(/index\.html$/,'').replace(/^https?:\/\//,'');
+  renderStats();
+}
+$$('[data-profile]').forEach(b => b.onclick = () => { $('#p-profile').classList.add('on'); document.body.classList.add('hidenav'); });
+$('#pBack').onclick = () => { $('#p-profile').classList.remove('on'); document.body.classList.remove('hidenav'); };
+$('#rowName').onclick = () => { const v = prompt('ชื่อของคุณ', settings.name); if(v && v.trim()){ settings.name=v.trim().slice(0,30); LS.set('auan_name',settings.name); renderProfile(); } };
+$('#rowBday').onclick = () => { const v = prompt('วันเกิด (เช่น 15 มิถุนายน)', settings.bday); if(v!==null){ settings.bday=v.trim(); LS.set('auan_bday',settings.bday); renderProfile(); } };
+$('#rowStreak').onclick = () => { settings.streak=!settings.streak; LS.set('auan_streak',settings.streak); renderProfile(); };
+$('#btnEditPhoto').onclick = () => $('#avPick').click();
+$('#avPick').onchange = async e => {
+  const f=e.target.files[0]; e.target.value=''; if(!f) return;
+  try{ const bmp=await createImageBitmap(f); const c=squareCanvas(bmp,bmp.width,bmp.height,false,256); settings.avatar=c.toDataURL('image/jpeg',.8); LS.set('auan_avatar',settings.avatar); renderProfile(); }catch(err){ toast('เปิดรูปนี้ไม่ได้'); }
+};
+$('#btnShare').onclick = async () => {
+  const url = location.href.replace(/index\.html$/,'');
+  if(navigator.share){ try{ await navigator.share({ title:'Auan', text:'มาใช้ Auan ด้วยกัน', url }); }catch(e){} }
+  else { try{ await navigator.clipboard.writeText(url); toast('คัดลอกลิงก์แล้ว'); }catch(e){ prompt('คัดลอกลิงก์นี้', url); } }
+};
+let deferredInstall;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; });
+$('#rowInstall').onclick = async () => {
+  if(deferredInstall){ deferredInstall.prompt(); deferredInstall=null; }
+  else toast('เปิดเมนูเบราว์เซอร์ แล้วเลือก "เพิ่มไปยังหน้าจอหลัก"');
+};
+$('#rowAbout').onclick = () => alert('Auan\nถ่ายรูปแล้วเก็บเป็นความทรงจำรายวัน\nรูปทั้งหมดเก็บไว้ในเครื่องของคุณเท่านั้น');
+$('#rowClear').onclick = async () => { if(confirm('ลบรูปทั้งหมดในแอป? ย้อนกลับไม่ได้')){ await dbClear(); await reload(); toast('ลบรูปทั้งหมดแล้ว'); } };
+
+/* ---------- boot ---------- */
+document.addEventListener('visibilitychange', () => { if(document.hidden) stopCam(); else if(cur==='home') startCam(); });
+if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(()=>{});
+scaleSvgs(); renderProfile();
+reload().then(() => startCam());
+</script>
+</body>
+</html>
