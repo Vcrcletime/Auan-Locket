@@ -32,7 +32,7 @@ button:focus-visible{outline:3px solid var(--pink);outline-offset:2px}
 .top h1{position:absolute;left:0;right:0;top:calc(var(--sat) + calc(28 * var(--u)));height:calc(120 * var(--u));display:grid;place-items:center;font-size:calc(56 * var(--u));font-weight:600;pointer-events:none}
 .roundbtn{width:calc(120 * var(--u));height:calc(120 * var(--u));border-radius:50%;background:var(--card2);display:grid;place-items:center;position:relative}
 .av{width:calc(120 * var(--u));height:calc(120 * var(--u));border-radius:50%;background:var(--card2) center/cover no-repeat;display:grid;place-items:center;font-weight:700;font-size:calc(50 * var(--u));color:#777;letter-spacing:calc(2 * var(--u));flex:none}
-.badge{position:absolute;top:calc(-16 * var(--u));right:calc(-12 * var(--u));width:calc(52 * var(--u));height:calc(52 * var(--u));border-radius:50%;background:var(--pink);display:grid;place-items:center}
+.badge{position:absolute;top:-calc(16 * var(--u));right:-calc(12 * var(--u));width:calc(52 * var(--u));height:calc(52 * var(--u));border-radius:50%;background:var(--pink);display:grid;place-items:center}
 .pill{height:calc(120 * var(--u));padding:0 calc(54 * var(--u));border-radius:calc(60 * var(--u));background:var(--card2);display:flex;align-items:center;gap:calc(22 * var(--u));font-size:calc(46 * var(--u));font-weight:600}
 
 .finder{width:var(--fsz);aspect-ratio:1/1;align-self:center;margin-top:calc(30 * var(--u));border-radius:calc(110 * var(--u));background:#111;position:relative;overflow:hidden;flex:none}
@@ -167,7 +167,7 @@ body.hidenav .nav,body.hidenav .fab{display:none}
 .minibtn.r{background:#4a2226;color:#ff8a8a}
 
 .chead{position:relative;display:flex;align-items:center;gap:calc(26 * var(--u));padding:calc(var(--sat) + calc(22 * var(--u))) calc(40 * var(--u)) calc(26 * var(--u)) calc(24 * var(--u));flex:none;overflow:hidden;border-radius:0 0 calc(90 * var(--u)) calc(90 * var(--u));background:#1c1c1c;margin:0 calc(22 * var(--u))}
-.chead::before{content:"";position:absolute;inset:calc(-30 * var(--u));background:var(--hbg,none) center/cover;filter:blur(9px) brightness(.55);z-index:0}
+.chead::before{content:"";position:absolute;inset:-calc(30 * var(--u));background:var(--hbg,none) center/cover;filter:blur(9px) brightness(.55);z-index:0}
 .chead>*{position:relative;z-index:1}
 .chead .av{width:calc(110 * var(--u));height:calc(110 * var(--u));font-size:calc(42 * var(--u))}
 .chead b{font-size:calc(60 * var(--u));font-weight:600;text-shadow:0 2px 8px rgba(0,0,0,.5)}
@@ -179,15 +179,18 @@ body.hidenav .nav,body.hidenav .fab{display:none}
 .bub{position:relative;background:#2c2c2c;color:#fff;padding:calc(34 * var(--u)) calc(54 * var(--u));border-radius:calc(72 * var(--u));font-size:calc(56 * var(--u));font-weight:500;line-height:1.3;word-break:break-word;white-space:pre-wrap;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .bub.me{background:#f1e4ea;color:#111}
 .rx{position:absolute;display:flex;z-index:2}
-.rx span{width:calc(92 * var(--u));height:calc(92 * var(--u));border-radius:50%;background:#1b1b1b;border:calc(8 * var(--u)) solid #000;display:grid;place-items:center;font-size:calc(48 * var(--u));margin-left:calc(-22 * var(--u))}
+.rx span{width:calc(92 * var(--u));height:calc(92 * var(--u));border-radius:50%;background:#1b1b1b;border:calc(8 * var(--u)) solid #000;display:grid;place-items:center;font-size:calc(48 * var(--u));margin-left:-calc(22 * var(--u))}
 .rx span:first-child{margin-left:0}
-.mrow.me .rx{left:calc(-46 * var(--u));top:calc(-62 * var(--u))}
-.mrow:not(.me) .rx{right:calc(-46 * var(--u));top:calc(-62 * var(--u));flex-direction:row-reverse}
+.mrow.me .rx{left:-calc(46 * var(--u));top:-calc(62 * var(--u))}
+.mrow:not(.me) .rx{right:-calc(46 * var(--u));top:-calc(62 * var(--u));flex-direction:row-reverse}
+.pmsg{position:relative;width:100%;aspect-ratio:1/1;border-radius:calc(110 * var(--u));overflow:hidden;background:#111;flex:none;margin-top:calc(14 * var(--u));user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;cursor:pointer}
+.pmsg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
 .pchip{position:absolute;left:calc(64 * var(--u));top:calc(62 * var(--u));display:flex;align-items:center;gap:calc(20 * var(--u));background:rgba(40,40,40,.88);padding:calc(14 * var(--u)) calc(36 * var(--u)) calc(14 * var(--u)) calc(18 * var(--u));border-radius:calc(60 * var(--u));font-size:calc(48 * var(--u))}
 .pchip .av{width:calc(66 * var(--u));height:calc(66 * var(--u));font-size:calc(26 * var(--u))}
 .pchip b{font-weight:600}
 .pchip i{font-style:normal;color:#aaa}
 .pcap{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(56 * var(--u));max-width:84%;background:rgba(50,50,50,.74);padding:calc(22 * var(--u)) calc(54 * var(--u));border-radius:calc(60 * var(--u));font-size:calc(54 * var(--u));font-weight:500;text-align:center;word-break:break-word}
+.pmsg .rx{right:calc(44 * var(--u));top:calc(200 * var(--u))}
 .cbar{padding:calc(18 * var(--u)) calc(22 * var(--u)) calc(var(--sab) + calc(28 * var(--u)));flex:none}
 .cpill{display:flex;align-items:center;background:#2b2b2b;border-radius:calc(110 * var(--u));min-height:calc(150 * var(--u));padding:0 calc(26 * var(--u)) 0 calc(60 * var(--u));gap:calc(10 * var(--u))}
 .cpill input{flex:1;min-width:0;background:none;border:0;color:#fff;font:inherit;font-size:calc(54 * var(--u));outline:0;padding:calc(30 * var(--u)) 0}
@@ -219,61 +222,10 @@ body.hidenav .nav,body.hidenav .fab{display:none}
 .etabs button.on{background:#444;filter:none;opacity:1}
 #lb.on{display:flex}
 #lb{position:absolute;inset:0;z-index:50;background:rgba(0,0,0,.95);align-items:center;justify-content:center}
+#lb img{width:100%;aspect-ratio:1/1;object-fit:cover}
 .lbbar{position:absolute;top:calc(var(--sat) + calc(30 * var(--u)));left:0;right:0;display:flex;justify-content:space-between;padding:0 calc(40 * var(--u));z-index:2}
 .lbbar button{width:calc(120 * var(--u));height:calc(120 * var(--u));border-radius:50%;background:#2b2b2b;display:grid;place-items:center}
-
-
-.pmsg{position:relative;width:100%;aspect-ratio:1/1;flex:none;margin-top:calc(14 * var(--u));user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;cursor:pointer}
-.pmsg.hasrx{margin-bottom:calc(44 * var(--u))}
-.pimg{position:absolute;inset:0;border-radius:calc(110 * var(--u));overflow:hidden;background:#111}
-.pimg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;-webkit-user-drag:none}
-.pmsg .rx{bottom:calc(-46 * var(--u));left:calc(80 * var(--u))}
-.pmsg:not(.me) .rx{left:auto;right:calc(80 * var(--u));flex-direction:row-reverse}
-#lb img{width:100%;height:auto;max-height:84%;object-fit:contain}
-.hl{position:relative;z-index:31}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-@keyframes scrIn{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
-@keyframes pageIn{from{opacity:0;transform:translateX(36px)}to{opacity:1;transform:none}}
-@keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
-@keyframes popIn{0%{opacity:0;transform:scale(.8)}60%{opacity:1;transform:scale(1.05)}100%{opacity:1;transform:scale(1)}}
-@keyframes msgIn{from{opacity:0;transform:translateY(18px) scale(.9)}to{opacity:1;transform:none}}
-@keyframes badgePop{0%{transform:scale(0)}60%{transform:scale(1.4)}100%{transform:scale(1)}}
-@keyframes rise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
-@keyframes ringGlow{0%,100%{box-shadow:0 0 0 0 rgba(255,95,162,0)}50%{box-shadow:0 0 0 14px rgba(255,95,162,.22)}}
-@keyframes beat{0%,100%{transform:scale(1)}14%{transform:scale(1.22)}28%{transform:scale(1)}42%{transform:scale(1.14)}70%{transform:scale(1)}}
-@keyframes snap{0%{filter:brightness(1);transform:scale(1)}30%{filter:brightness(2.2);transform:scale(.97)}100%{filter:brightness(1);transform:scale(1)}}
-@keyframes navPop{0%{transform:scale(.7)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
-.screen.on{animation:scrIn .3s cubic-bezier(.2,.8,.2,1) backwards}
-.page.on{animation:pageIn .32s cubic-bezier(.2,.85,.25,1) backwards}
-.fullview.on .finder{animation:popIn .35s cubic-bezier(.2,1.2,.3,1) backwards}
-.fullview.on .vbar,.fullview.on .vdate,.fullview.on #pvFriends{animation:rise .4s .08s backwards}
-.sheetbg.on{animation:fadeIn .2s backwards}
-.sheetbg.on .sheet{animation:sheetUp .34s cubic-bezier(.2,.9,.25,1) backwards}
-#emo.on .emobg,#rx.on .rxbg{animation:fadeIn .2s backwards}
-#emo.on .emosheet{animation:sheetUp .34s cubic-bezier(.2,.9,.25,1) backwards}
-#rx.on .rxbar{animation:popIn .3s cubic-bezier(.2,1.3,.4,1) backwards;transform-origin:50% 0}
-#rx.on .rxmenu{animation:popIn .3s .04s cubic-bezier(.2,1.3,.4,1) backwards;transform-origin:50% 0}
-#lb.on{animation:fadeIn .2s backwards}
-#lb.on img{animation:popIn .34s cubic-bezier(.2,1.1,.3,1) backwards}
-.mrow.new,.pmsg.new{animation:msgIn .32s cubic-bezier(.2,1.2,.4,1) backwards}
-.rx span.pop{animation:badgePop .4s cubic-bezier(.2,1.4,.4,1) backwards}
-.month{animation:rise .5s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--i,0) * 70ms)}
-.cell.photo{animation:popIn .4s backwards;animation-delay:calc(var(--j,0) * 18ms + 120ms);transition:transform .15s}
-.cell.photo:active{transform:scale(.92)}
-.stats span:first-child svg{animation:beat 2.4s ease-in-out infinite}
-.shutter{animation:ringGlow 3.2s ease-in-out infinite}
-.finder.snap{animation:snap .32s ease}
-.nav button{transition:background .25s,color .25s,transform .14s}
-.nav button.on svg{animation:navPop .38s cubic-bezier(.2,1.4,.4,1)}
-button{transition:transform .14s ease,background-color .2s ease,opacity .2s ease}
-button:active{transform:scale(.92)}
-.shutter:active{transform:none}
-.bub,.pmsg{transition:transform .15s ease}
-.bub:active{transform:scale(.97)}
-.pmsg:active{transform:scale(.985)}
-.crow{transition:background .15s}
-.crow:active{background:#161616}
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
@@ -559,7 +511,6 @@ $('#btnShot').onclick = async () => {
   if(!stream || !video.videoWidth){ toast('กล้องยังไม่พร้อม'); return; }
   const t = stream.getVideoTracks()[0]; const hasTorch = !!t.getCapabilities?.().torch;
   if(torchOn && !hasTorch){ const w=$('#flashWhite'); w.classList.add('on'); await new Promise(r=>setTimeout(r,200)); }
-  const fd = $('#finder'); fd.classList.remove('snap'); void fd.offsetWidth; fd.classList.add('snap');
   const c = squareCanvas(video, video.videoWidth, video.videoHeight, facing==='user');
   $('#flashWhite').classList.remove('on');
   showPreview(c);
@@ -594,10 +545,10 @@ function renderMemories(){
   let start = new Date(now.getFullYear(), now.getMonth()-1, 1);
   if(photos.length){ const f = new Date(photos[0].ts); const fm = new Date(f.getFullYear(), f.getMonth(), 1); if(fm < start) start = fm; }
   const end = new Date(now.getFullYear(), now.getMonth(), 1);
-  let i = 0, pj = 0;
+  let i = 0;
   for(let m = new Date(start); m <= end; m = new Date(m.getFullYear(), m.getMonth()+1, 1), i++){
     if(i){ const c=document.createElement('div'); c.className='conn'; c.innerHTML=connSVG(i%2); wrap.appendChild(c); }
-    const card = document.createElement('div'); card.className='month'; card.style.setProperty('--i', Math.min(i, 6));
+    const card = document.createElement('div'); card.className='month';
     card.innerHTML = `<h2>${MONTHS[m.getMonth()]} ${m.getFullYear()}</h2>`;
     const g = document.createElement('div'); g.className='grid';
     const first = m.getDay(), days = new Date(m.getFullYear(), m.getMonth()+1, 0).getDate();
@@ -608,7 +559,7 @@ function renderMemories(){
       const list = byDay[k];
       if(list){
         const last = list[list.length-1];
-        cell.classList.add('photo'); cell.style.backgroundImage = `url(${thumbURLs[last.id]})`; cell.style.setProperty('--j', Math.min(pj++, 20));
+        cell.classList.add('photo'); cell.style.backgroundImage = `url(${thumbURLs[last.id]})`;
         if(list.length>1) cell.innerHTML = `<span class="cnt">${list.length}</span>`;
         cell.onclick = () => openViewer(k);
         if(k===today) cell.classList.add('today');
@@ -683,7 +634,7 @@ $('#rowInstall').onclick = async () => {
   if(deferredInstall){ deferredInstall.prompt(); deferredInstall=null; }
   else toast('เปิดเมนูเบราว์เซอร์ แล้วเลือก "เพิ่มไปยังหน้าจอหลัก"');
 };
-$('#rowAbout').onclick = () => alert('Auan เวอร์ชัน 5 (อนิเมชันใหม่)\nถ่ายรูปแล้วเก็บเป็นความทรงจำรายวัน\nรูปในแอปเก็บในเครื่อง รูปที่ส่งให้เพื่อนเก็บบนเซิร์ฟเวอร์');
+$('#rowAbout').onclick = () => alert('Auan\nถ่ายรูปแล้วเก็บเป็นความทรงจำรายวัน\nรูปทั้งหมดเก็บไว้ในเครื่องของคุณเท่านั้น');
 $('#rowClear').onclick = async () => { if(confirm('ลบรูปทั้งหมดในแอป? ย้อนกลับไม่ได้')){ await dbClear(); await reload(); toast('ลบรูปทั้งหมดแล้ว'); } };
 
 /* ---------- boot ---------- */
@@ -694,6 +645,6 @@ window.setProfile = o => { Object.assign(settings, o); if('name' in o) LS.set('a
 scaleSvgs(); renderProfile();
 reload().then(() => startCam());
 </script>
-<script type="module" src="cloud.js?v=5"></script>
+<script type="module" src="cloud.js?v=4"></script>
 </body>
 </html>
