@@ -113,7 +113,7 @@ body.hidenav .nav,body.hidenav .fab{display:none}
 
 .sheetbg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:45;display:none;justify-content:center;align-items:flex-end}
 .sheetbg.on{display:flex}
-.sheet{width:var(--W);background:#232323;border-radius:calc(90 * var(--u)) calc(90 * var(--u)) 0 0;padding:calc(36 * var(--u)) calc(44 * var(--u)) calc(var(--sab) + calc(60 * var(--u)));min-height:46%}
+.sheet{width:var(--W);background:#232323;border-radius:calc(90 * var(--u)) calc(90 * var(--u)) 0 0;padding:calc(36 * var(--u)) calc(44 * var(--u)) calc(var(--sab) + calc(60 * var(--u)));min-height:46%;max-height:90dvh;overflow-y:auto}
 .sheet .grab{width:calc(190 * var(--u));height:calc(14 * var(--u));border-radius:calc(8 * var(--u));background:#555;margin:0 auto calc(56 * var(--u))}
 .sheet h3{text-align:center;font-size:calc(84 * var(--u));font-weight:700;margin-bottom:calc(12 * var(--u))}
 .sheet p{text-align:center;color:var(--mute);font-size:calc(42 * var(--u));margin-bottom:calc(40 * var(--u))}
@@ -122,6 +122,45 @@ body.hidenav .nav,body.hidenav .fab{display:none}
 .tip b{font-size:calc(50 * var(--u));display:block}.tip small{color:var(--mute);font-size:calc(42 * var(--u))}
 .toast{position:fixed;left:50%;top:calc(var(--sat) + calc(30 * var(--u)));transform:translate(-50%,-30px);opacity:0;pointer-events:none;background:#fff;color:#111;padding:calc(26 * var(--u)) calc(54 * var(--u));border-radius:calc(80 * var(--u));font-weight:600;font-size:calc(42 * var(--u));z-index:90;transition:.3s;max-width:90%;text-align:center}
 .toast.on{transform:translate(-50%,0);opacity:1}
+
+.crow{display:flex;align-items:center;gap:calc(36 * var(--u));padding:calc(28 * var(--u)) calc(66 * var(--u));cursor:pointer}
+.crow .txt{flex:1;min-width:0}
+.crow b{display:block;font-size:calc(52 * var(--u));font-weight:600}
+.crow small{display:block;font-size:calc(44 * var(--u));color:#8a8a8a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crow time{font-size:calc(40 * var(--u));color:#777;align-self:flex-start;padding-top:calc(10 * var(--u))}
+.crow .av{width:calc(140 * var(--u));height:calc(140 * var(--u));font-size:calc(52 * var(--u))}
+.av.ring{border:calc(6 * var(--u)) solid var(--bg);box-shadow:0 0 0 calc(6 * var(--u)) var(--pink);color:var(--pink)}
+.minibtn{background:var(--pink);color:#fff;padding:calc(22 * var(--u)) calc(46 * var(--u));border-radius:calc(70 * var(--u));font-weight:600;font-size:calc(42 * var(--u));flex:none}
+.minibtn.g{background:#3a3a3a}
+.addrow{display:flex;gap:calc(20 * var(--u));margin-bottom:calc(30 * var(--u))}
+.addrow input{flex:1;min-width:0;background:#333;border:0;border-radius:calc(90 * var(--u));padding:calc(36 * var(--u)) calc(50 * var(--u));color:#fff;font:inherit;font-size:calc(46 * var(--u));outline:0}
+.fh{font-size:calc(54 * var(--u));font-weight:600;margin:calc(44 * var(--u)) 0 calc(14 * var(--u))}
+.frow{display:flex;align-items:center;gap:calc(28 * var(--u));padding:calc(20 * var(--u)) 0}
+.frow .av{width:calc(120 * var(--u));height:calc(120 * var(--u));font-size:calc(44 * var(--u))}
+.frow .ftxt{flex:1;min-width:0}
+.frow b{display:block;font-size:calc(48 * var(--u));font-weight:600}
+.frow small,.muted{font-size:calc(40 * var(--u));color:var(--mute)}
+#fsList p{color:var(--mute);font-size:calc(42 * var(--u));text-align:center;padding:calc(30 * var(--u))}
+#p-convo{z-index:42}
+.chead{display:flex;align-items:center;gap:calc(28 * var(--u));padding:calc(var(--sat) + calc(20 * var(--u))) calc(40 * var(--u)) calc(20 * var(--u)) calc(20 * var(--u));flex:none}
+.chead .av{width:calc(110 * var(--u));height:calc(110 * var(--u));font-size:calc(42 * var(--u))}
+.chead b{font-size:calc(52 * var(--u));font-weight:600}
+.msgs{flex:1;overflow-y:auto;padding:calc(20 * var(--u)) calc(40 * var(--u));display:flex;flex-direction:column;gap:calc(16 * var(--u))}
+.bub{max-width:76%;padding:calc(26 * var(--u)) calc(40 * var(--u));border-radius:calc(60 * var(--u));font-size:calc(46 * var(--u));line-height:1.4;word-break:break-word;background:var(--card2);align-self:flex-start;white-space:pre-wrap}
+.bub.me{align-self:flex-end;background:var(--pink)}
+.bub.photo{padding:calc(12 * var(--u));width:64%;border-radius:calc(56 * var(--u))}
+.bub.photo img{display:block;width:100%;border-radius:calc(44 * var(--u))}
+.bub .capt{padding:calc(18 * var(--u)) calc(24 * var(--u)) calc(10 * var(--u));font-size:calc(44 * var(--u))}
+.cbar{display:flex;gap:calc(20 * var(--u));align-items:center;padding:calc(20 * var(--u)) calc(40 * var(--u)) calc(var(--sab) + calc(30 * var(--u)));flex:none}
+.cbar input{flex:1;min-width:0;background:var(--card2);border:0;color:#fff;font:inherit;font-size:calc(46 * var(--u));padding:calc(32 * var(--u)) calc(46 * var(--u));border-radius:calc(90 * var(--u));outline:0}
+.cbar button{width:calc(120 * var(--u));height:calc(120 * var(--u));border-radius:50%;background:var(--card2);display:grid;place-items:center;flex:none}
+.cbar #cvSend{background:var(--pink)}
+#pvFriends{display:flex;gap:calc(30 * var(--u));overflow-x:auto;padding:calc(30 * var(--u)) calc(50 * var(--u)) 0;width:100%;flex:none}
+#pvFriends:empty{display:none}
+.pf{display:flex;flex-direction:column;align-items:center;gap:calc(10 * var(--u));font-size:calc(34 * var(--u));color:#bbb;flex:none;width:calc(150 * var(--u))}
+.pf .av{width:calc(120 * var(--u));height:calc(120 * var(--u));font-size:calc(44 * var(--u));border:calc(8 * var(--u)) solid transparent}
+.pf.on .av{border-color:var(--pink)}
+.pf span{max-width:calc(150 * var(--u));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -172,11 +211,7 @@ body.hidenav .nav,body.hidenav .fab{display:none}
 <!-- CHAT -->
 <section class="screen" id="s-chat">
   <div class="top"><h1>แช็ต</h1><span></span><button class="av" data-profile aria-label="โปรไฟล์"></button></div>
-  <div class="empty">
-    <svg width="56" height="56" viewBox="0 0 24 24" fill="#333"><path d="M12 3C6.5 3 2 6.6 2 11c0 2.4 1.3 4.5 3.4 6L5 21l4-2c1 .3 2 .4 3 .4 5.5 0 10-3.6 10-8S17.5 3 12 3z"/></svg>
-    <b style="color:#ccc;font-size:22px">ยังไม่มีแช็ต</b>
-    <span>ระบบแช็ตและส่งรูปหาเพื่อนต้องมีเซิร์ฟเวอร์ (เช่น Firebase) จะเพิ่มทีหลังได้</span>
-  </div>
+  <div class="scroll" id="chatBody" style="padding:0;display:flex;flex-direction:column"></div>
   <button class="fab" id="btnCompose" aria-label="แช็ตใหม่"><svg width="34" height="34" viewBox="0 0 24 24" fill="#000"><path d="M3 17.3V21h3.7L17.8 9.9l-3.7-3.7zM20.7 7a1 1 0 0 0 0-1.4l-2.3-2.3a1 1 0 0 0-1.4 0l-1.8 1.8 3.7 3.7z"/></svg></button>
 </section>
 
@@ -198,6 +233,8 @@ body.hidenav .nav,body.hidenav .fab{display:none}
     <div class="promo"><svg width="30" height="30" viewBox="0 0 24 24"><path d="M12 21C5 15.5 3 12 3 8.8A4.8 4.8 0 0 1 12 6.5a4.8 4.8 0 0 1 9 2.3C21 12 19 15.5 12 21z" fill="#ff5fa2"/></svg><div><b>Auan Pink</b><small>ธีมสีชมพูเปิดใช้งานแล้ว</small></div></div>
     <button class="box" id="btnShare"><div style="flex:1;text-align:left"><b>เชิญเพื่อนมาใช้ Auan!</b><small id="shareUrl"></small></div><svg width="34" height="34" viewBox="0 0 24 24" fill="#ccc"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8 11 8-5m-8 7 8 5" stroke="#ccc" stroke-width="2" fill="none"/></svg></button>
 
+    <div class="box" id="acct"></div>
+
     <div class="sec">การตั้งค่า</div>
     <button class="row" id="rowStreak"><svg width="34" height="34" viewBox="0 0 24 24" fill="#bbb"><path d="M12 2.5c1 3-1 4-1 6 0 1.5 1 2 2 2s2-1 1.5-3c3 2 5 5 5 8a7.5 7.5 0 0 1-15 0c0-3 1.5-4.5 3-6 0 2 1 3 2 3 0-3 0-7 2.5-10z"/></svg>แสดง Streak<span class="switch on" id="swStreak"></span></button>
     <button class="row" id="rowInstall"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m-5-5 5 5 5-5M5 20h14"/></svg><div>ติดตั้งแอป<small>เพิ่มลงหน้าจอหลัก</small></div></button>
@@ -214,17 +251,32 @@ body.hidenav .nav,body.hidenav .fab{display:none}
   </div>
 </section>
 
+<!-- CONVERSATION -->
+<section class="page" id="p-convo">
+  <div class="chead">
+    <button class="back" id="cvBack" aria-label="กลับ" style="margin:0"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H4m6-7-7 7 7 7"/></svg></button>
+    <div id="cvHead" style="display:flex;align-items:center;gap:calc(28 * var(--u))"></div>
+  </div>
+  <div class="msgs" id="msgs"></div>
+  <div class="cbar">
+    <button id="cvPhoto" aria-label="ส่งรูป"><svg width="30" height="30" viewBox="0 0 24 24" fill="#fff"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.8" fill="#262626"/><path d="m4 18 5-5 3 3 3-3 5 5z" fill="#262626"/></svg></button>
+    <input id="cvInput" placeholder="ข้อความ..." autocomplete="off" maxlength="500">
+    <button id="cvSend" aria-label="ส่ง"><svg width="30" height="30" viewBox="0 0 24 24" fill="#fff"><path d="M3 20.5 21 12 3 3.5v6.5l11 2-11 2z"/></svg></button>
+  </div>
+</section>
+<input type="file" id="cvPick" accept="image/*" hidden>
+
 <!-- FRIENDS SHEET -->
 <div class="sheetbg" id="sheetBg"><div class="sheet" onclick="event.stopPropagation()">
   <div class="grab"></div>
-  <h3>เพื่อนของคุณ</h3><p>ตอนนี้รูปทั้งหมดเก็บไว้ในเครื่องของคุณเท่านั้น</p>
-  <div class="search"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>เพิ่มเพื่อนใหม่</div>
-  <div class="tip"><svg width="40" height="40" viewBox="0 0 24 24" fill="#ccc"><circle cx="9" cy="8" r="4"/><path d="M2 20c0-4 3-6 7-6s7 2 7 6z"/></svg><div><b>ส่งรูปหาเพื่อนยังไม่เปิดใช้</b><small>ต้องเชื่อมต่อเซิร์ฟเวอร์ (เช่น Firebase) ก่อน</small></div></div>
+  <h3>เพื่อนของคุณ</h3>
+  <div id="fsBody"></div>
 </div></div>
 
 <!-- PREVIEW (after capture) -->
 <section class="fullview" id="preview">
   <div class="finder v"><img id="pvImg" alt=""><input id="pvCap" maxlength="60" placeholder="เพิ่มข้อความ..."></div>
+  <div id="pvFriends"></div>
   <div class="vbar">
     <button class="ctl" id="pvCancel" aria-label="ถ่ายใหม่"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M5 5l14 14M19 5 5 19"/></svg></button>
     <button class="save" id="pvSave" aria-label="บันทึก"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 5 5L20 6"/></svg></button>
@@ -361,6 +413,7 @@ async function showPreview(canvas){
   $('#pvImg').src = URL.createObjectURL(blob);
   $('#pvCap').value = '';
   $('#preview').classList.add('on'); document.body.classList.add('hidenav');
+  if(window.onPreviewOpen) window.onPreviewOpen();
 }
 $('#btnShot').onclick = async () => {
   if(!stream || !video.videoWidth){ toast('กล้องยังไม่พร้อม'); return; }
@@ -381,7 +434,11 @@ $('#pvSave').onclick = async () => {
   if(!pending) return;
   const now = new Date();
   await dbAdd({ date: dkey(now), ts: now.getTime(), caption: $('#pvCap').value.trim(), blob: pending.blob, thumb: pending.thumb });
-  closePreview(); await reload(); toast('บันทึกแล้ว 💗');
+  const pend = pending, cap = $('#pvCap').value.trim();
+  closePreview(); await reload();
+  let sent = false;
+  if(window.onPhotoSaved){ try{ sent = await window.onPhotoSaved(pend, cap); }catch(e){ toast('ส่งรูปให้เพื่อนไม่สำเร็จ'); } }
+  toast(sent ? 'บันทึกและส่งให้เพื่อนแล้ว 💗' : 'บันทึกแล้ว 💗');
 };
 function download(blob, name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),2000); }
 $('#pvDl').onclick = () => pending && download(pending.blob, `auan-${Date.now()}.jpg`);
@@ -464,13 +521,13 @@ function renderProfile(){
 }
 $$('[data-profile]').forEach(b => b.onclick = () => { $('#p-profile').classList.add('on'); document.body.classList.add('hidenav'); });
 $('#pBack').onclick = () => { $('#p-profile').classList.remove('on'); document.body.classList.remove('hidenav'); };
-$('#rowName').onclick = () => { const v = prompt('ชื่อของคุณ', settings.name); if(v && v.trim()){ settings.name=v.trim().slice(0,30); LS.set('auan_name',settings.name); renderProfile(); } };
+$('#rowName').onclick = () => { const v = prompt('ชื่อของคุณ', settings.name); if(v && v.trim()){ settings.name=v.trim().slice(0,30); LS.set('auan_name',settings.name); renderProfile(); if(window.onProfileChanged) window.onProfileChanged(); } };
 $('#rowBday').onclick = () => { const v = prompt('วันเกิด (เช่น 15 มิถุนายน)', settings.bday); if(v!==null){ settings.bday=v.trim(); LS.set('auan_bday',settings.bday); renderProfile(); } };
 $('#rowStreak').onclick = () => { settings.streak=!settings.streak; LS.set('auan_streak',settings.streak); renderProfile(); };
 $('#btnEditPhoto').onclick = () => $('#avPick').click();
 $('#avPick').onchange = async e => {
   const f=e.target.files[0]; e.target.value=''; if(!f) return;
-  try{ const bmp=await createImageBitmap(f); const c=squareCanvas(bmp,bmp.width,bmp.height,false,256); settings.avatar=c.toDataURL('image/jpeg',.8); LS.set('auan_avatar',settings.avatar); renderProfile(); }catch(err){ toast('เปิดรูปนี้ไม่ได้'); }
+  try{ const bmp=await createImageBitmap(f); const c=squareCanvas(bmp,bmp.width,bmp.height,false,256); settings.avatar=c.toDataURL('image/jpeg',.8); LS.set('auan_avatar',settings.avatar); renderProfile(); if(window.onProfileChanged) window.onProfileChanged(); }catch(err){ toast('เปิดรูปนี้ไม่ได้'); }
 };
 $('#btnShare').onclick = async () => {
   const url = location.href.replace(/index\.html$/,'');
@@ -489,8 +546,11 @@ $('#rowClear').onclick = async () => { if(confirm('ลบรูปทั้ง�
 /* ---------- boot ---------- */
 document.addEventListener('visibilitychange', () => { if(document.hidden) stopCam(); else if(cur==='home') startCam(); });
 if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(()=>{});
+window.getSettings = () => settings;
+window.setProfile = o => { Object.assign(settings, o); if('name' in o) LS.set('auan_name', settings.name); if('avatar' in o) LS.set('auan_avatar', settings.avatar); renderProfile(); };
 scaleSvgs(); renderProfile();
 reload().then(() => startCam());
 </script>
+<script type="module" src="cloud.js"></script>
 </body>
 </html>
