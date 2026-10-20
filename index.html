@@ -135,7 +135,7 @@ body.hidenav .nav,body.hidenav .fab{display:none}
 .addrow{display:flex;gap:calc(20 * var(--u));margin-bottom:calc(30 * var(--u))}
 .addrow input{flex:1;min-width:0;background:#333;border:0;border-radius:calc(90 * var(--u));padding:calc(36 * var(--u)) calc(50 * var(--u));color:#fff;font:inherit;font-size:calc(46 * var(--u));outline:0}
 .fh{font-size:calc(54 * var(--u));font-weight:600;margin:calc(44 * var(--u)) 0 calc(14 * var(--u))}
-.frow{display:flex;align-items:center;gap:calc(28 * var(--u));padding:calc(20 * var(--u)) 0}
+.frow{flex-wrap:wrap;display:flex;align-items:center;gap:calc(28 * var(--u));padding:calc(20 * var(--u)) 0}
 .frow .av{width:calc(120 * var(--u));height:calc(120 * var(--u));font-size:calc(44 * var(--u))}
 .frow .ftxt{flex:1;min-width:0}
 .frow b{display:block;font-size:calc(48 * var(--u));font-weight:600}
@@ -161,6 +161,23 @@ body.hidenav .nav,body.hidenav .fab{display:none}
 .pf .av{width:calc(120 * var(--u));height:calc(120 * var(--u));font-size:calc(44 * var(--u));border:calc(8 * var(--u)) solid transparent}
 .pf.on .av{border-color:var(--pink)}
 .pf span{max-width:calc(150 * var(--u));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.srow{display:flex;align-items:center;gap:calc(30 * var(--u));padding:calc(22 * var(--u)) calc(10 * var(--u));cursor:pointer}
+.srow .av{width:calc(120 * var(--u));height:calc(120 * var(--u));font-size:calc(44 * var(--u))}
+.srow b{flex:1;font-size:calc(48 * var(--u));font-weight:600}
+.srow.all{border-bottom:calc(4 * var(--u)) solid #333;margin-bottom:calc(10 * var(--u));padding-bottom:calc(30 * var(--u))}
+.chk{width:calc(70 * var(--u));height:calc(70 * var(--u));border-radius:50%;border:calc(6 * var(--u)) solid #555;flex:none}
+.srow.on .chk{background:var(--pink);border-color:var(--pink)}
+.sbtns{display:flex;gap:calc(24 * var(--u));margin-top:calc(40 * var(--u));align-items:center}
+.sbtns .btn{flex:1;text-align:center}
+.sbtns .minibtn{padding:calc(30 * var(--u)) calc(44 * var(--u))}
+#sendGo:disabled{opacity:.4}
+
+.cvmenu{margin-left:auto;width:calc(110 * var(--u));height:calc(110 * var(--u));display:grid;place-items:center;border-radius:50%;background:var(--card2);flex:none}
+.fbtns{display:flex;gap:calc(14 * var(--u));margin-left:auto;flex:none}
+.frow.two .fbtns{width:100%;justify-content:flex-end;margin-left:0}
+.minibtn.s{padding:calc(20 * var(--u)) calc(34 * var(--u));font-size:calc(38 * var(--u))}
+.minibtn.r{background:#4a2226;color:#ff8a8a}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -256,6 +273,7 @@ body.hidenav .nav,body.hidenav .fab{display:none}
   <div class="chead">
     <button class="back" id="cvBack" aria-label="กลับ" style="margin:0"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H4m6-7-7 7 7 7"/></svg></button>
     <div id="cvHead" style="display:flex;align-items:center;gap:calc(28 * var(--u))"></div>
+    <button class="cvmenu" id="cvBlock" aria-label="บล็อก"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#ff8a8a" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></svg></button>
   </div>
   <div class="msgs" id="msgs"></div>
   <div class="cbar">
@@ -267,10 +285,19 @@ body.hidenav .nav,body.hidenav .fab{display:none}
 <input type="file" id="cvPick" accept="image/*" hidden>
 
 <!-- FRIENDS SHEET -->
-<div class="sheetbg" id="sheetBg"><div class="sheet" onclick="event.stopPropagation()">
+<div class="sheetbg" id="sheetBg"><div class="sheet">
   <div class="grab"></div>
   <h3>เพื่อนของคุณ</h3>
   <div id="fsBody"></div>
+</div></div>
+
+<!-- SEND TO -->
+<div class="sheetbg" id="sendBg" style="z-index:55"><div class="sheet">
+  <div class="grab"></div>
+  <h3>ส่งถึงใคร</h3><p>เลือกเพื่อนที่จะส่งรูปนี้ให้ (รูปจะถูกบันทึกในเครื่องด้วย)</p>
+  <div class="srow all" id="sendAll"><b>เลือกทั้งหมด</b><i class="chk"></i></div>
+  <div id="sendList"></div>
+  <div class="sbtns"><button class="minibtn g" id="sendSkip">บันทึกอย่างเดียว</button><button class="btn" id="sendGo" disabled>ส่ง</button></div>
 </div></div>
 
 <!-- PREVIEW (after capture) -->
@@ -279,7 +306,7 @@ body.hidenav .nav,body.hidenav .fab{display:none}
   <div id="pvFriends"></div>
   <div class="vbar">
     <button class="ctl" id="pvCancel" aria-label="ถ่ายใหม่"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M5 5l14 14M19 5 5 19"/></svg></button>
-    <button class="save" id="pvSave" aria-label="บันทึก"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 5 5L20 6"/></svg></button>
+    <button class="save" id="pvSave" aria-label="ส่ง / บันทึก"><svg width="52" height="52" viewBox="0 0 24 24" fill="#fff"><path d="M3 20.5 21 12 3 3.5v6.5l11 2-11 2z"/></svg></button>
     <button class="ctl" id="pvDl" aria-label="ดาวน์โหลด"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m-5-5 5 5 5-5M5 20h14"/></svg></button>
   </div>
 </section>
@@ -364,7 +391,7 @@ $('#histBtn').onclick = () => go('mem');
 $('#btnCompose').onclick = () => toast('ระบบแช็ตยังไม่เปิดใช้ ต้องมีเซิร์ฟเวอร์ก่อน');
 $('#btnHint').onclick = () => toast('วิดเจ็ตหน้าจอหลักต้องใช้แอปมือถือจริง');
 $('#btnFriends').onclick = () => $('#sheetBg').classList.add('on');
-$('#sheetBg').onclick = () => $('#sheetBg').classList.remove('on');
+$('#sheetBg').onclick = e => { if(e.target === e.currentTarget) e.currentTarget.classList.remove('on'); };
 
 /* ---------- camera ---------- */
 let stream = null, facing = 'environment', torchOn = false, camBusy = false;
@@ -432,12 +459,14 @@ function closePreview(){ $('#preview').classList.remove('on'); document.body.cla
 $('#pvCancel').onclick = closePreview;
 $('#pvSave').onclick = async () => {
   if(!pending) return;
+  let to = [];
+  if(window.chooseRecipients){ to = await window.chooseRecipients(); if(to === null) return; }
   const now = new Date();
   await dbAdd({ date: dkey(now), ts: now.getTime(), caption: $('#pvCap').value.trim(), blob: pending.blob, thumb: pending.thumb });
   const pend = pending, cap = $('#pvCap').value.trim();
   closePreview(); await reload();
   let sent = false;
-  if(window.onPhotoSaved){ try{ sent = await window.onPhotoSaved(pend, cap); }catch(e){ toast('ส่งรูปให้เพื่อนไม่สำเร็จ'); } }
+  if(window.onPhotoSaved){ try{ sent = await window.onPhotoSaved(pend, cap, to); }catch(e){ toast('ส่งรูปให้เพื่อนไม่สำเร็จ'); } }
   toast(sent ? 'บันทึกและส่งให้เพื่อนแล้ว 💗' : 'บันทึกแล้ว 💗');
 };
 function download(blob, name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),2000); }
