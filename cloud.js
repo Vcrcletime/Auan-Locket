@@ -35,7 +35,7 @@ function avHTML(p, cls = ''){
 const chatSvg = '<svg width="56" height="56" viewBox="0 0 24 24" fill="#333"><path d="M12 3C6.5 3 2 6.6 2 11c0 2.4 1.3 4.5 3.4 6L5 21l4-2c1 .3 2 .4 3 .4 5.5 0 10-3.6 10-8S17.5 3 12 3z"/></svg>';
 const emptyHTML = (t, d, extra = '') => `<div class="empty">${chatSvg}<b>${t}</b><span>${d}</span>${extra}</div>`;
 
-async function shrink(blob, max = 720){
+async function shrink(blob, max = 1080){
   const bmp = await createImageBitmap(blob);
   const s = Math.min(1, max / Math.max(bmp.width, bmp.height));
   const c = document.createElement('canvas');
@@ -210,8 +210,8 @@ async function removeFriendship(id, ask){
   if(f.status === 'accepted'){ try{ await wipeMessages(id); }catch(e){} }
   await F.deleteDoc(F.doc(db, 'friendships', id));
 }
-async function blockUser(uid){
-  if(!confirm('บล็อกผู้ใช้นี้?\n• ลบออกจากเพื่อนและลบประวัติแช็ต\n• เขาจะส่งคำขอหรือข้อความหาคุณไม่ได้')) return;
+async function blockUser(uid, skip){
+  if(!skip && !confirm('บล็อกผู้ใช้นี้?\n• ลบออกจากเพื่อนและลบประวัติแช็ต\n• เขาจะส่งคำขอหรือข้อความหาคุณไม่ได้')) return;
   const id = fidOf(me.uid, uid);
   await F.setDoc(F.doc(db, 'blocks', me.uid + '_' + uid), { blocker: me.uid, blocked: uid, ts: F.serverTimestamp() });
   if(friendships[id]) await removeFriendship(id, false);
@@ -232,12 +232,25 @@ function renderChat(){
 }
 
 /* ---------- conversation ---------- */
+const MON = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const QUICK = ['😍','🫶','💕','🤣','💛'];
+const p2 = n => String(n).padStart(2, '0');
+const msgMs = m => msOf(m.ts) || Date.now();
+const fmtDivider = ms => { const d = new Date(ms); return `${d.getDate()} ${MON[d.getMonth()]} ${p2(d.getHours())}:${p2(d.getMinutes())}`; };
+function rel(ms){
+  const s = Math.max(0, (Date.now() - ms) / 1000);
+  if(s < 60) return 'now'; if(s < 3600) return Math.floor(s / 60) + 'm'; if(s < 86400) return Math.floor(s / 3600) + 'h';
+  if(s < 604800) return Math.floor(s / 86400) + 'd'; return Math.floor(s / 604800) + 'w';
+}
+const msgsEl = $('#msgs');
+
 function openConvo(fid){
   const f = friendships[fid]; if(!f) return;
   curFid = fid; firstRender = true; msgs = [];
   const p = people[other(f)] || {};
   $('#cvHead').innerHTML = avHTML(p) + `<b>${esc(p.name || '')}</b>`;
-  $('#msgs').innerHTML = '';
+  $('#chead').style.removeProperty('--hbg');
+  msgsEl.innerHTML = '';
   $('#p-convo').classList.add('on'); document.body.classList.add('hidenav');
   if(unsubM) unsubM();
   unsubM = F.onSnapshot(F.query(F.collection(db, 'friendships', fid, 'messages'), F.orderBy('ts', 'asc'), F.limitToLast(100)), snap => {
@@ -245,37 +258,163 @@ function openConvo(fid){
   }, () => toast('โหลดข้อความไม่ได้'));
 }
 function closeConvo(){
+  closeRx(); $('#emo').classList.remove('on'); $('#lb').classList.remove('on');
   if(unsubM) unsubM(); unsubM = null; curFid = null;
   $('#p-convo').classList.remove('on'); document.body.classList.remove('hidenav');
 }
+function reactHTML(m){
+  const em = Object.values(m.reactions || {}).filter(Boolean);
+  return em.length ? `<div class="rx">${em.map(e => `<span>${esc(e)}</span>`).join('')}</div>` : '';
+}
 function renderMsgs(){
-  const el = $('#msgs');
-  const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 250;
-  el.innerHTML = msgs.map(m => {
-    const mine = m.from === me.uid;
-    if(m.kind === 'photo') return `<div class="bub photo ${mine ? 'me' : ''}"><img src="${m.img}" alt="">${m.text ? `<div class="capt">${esc(m.text)}</div>` : ''}</div>`;
-    return `<div class="bub ${mine ? 'me' : ''}">${esc(m.text)}</div>`;
-  }).join('');
-  if(firstRender || nearBottom){ el.scrollTop = el.scrollHeight; firstRender = false; }
+  const f = friendships[curFid]; if(!f) return;
+  const fp = people[other(f)] || {}, st = window.getSettings();
+  const nearBottom = msgsEl.scrollHeight - msgsEl.scrollTop - msgsEl.clientHeight < 300;
+  let prev = 0, h = '', lastImg = '';
+  msgs.forEach(m => {
+    const t = msgMs(m);
+    if(!prev || t - prev > 3600000) h += `<div class="tdiv">${fmtDivider(t)}</div>`;
+    prev = t;
+    const mine = m.from === me.uid, rx = reactHTML(m);
+    if(m.kind === 'photo'){
+      lastImg = m.img;
+      const who = mine ? { name: 'คุณ', avatar: st.avatar } : fp;
+      h += `<div class="pmsg" data-mid="${m.id}"><img src="${m.img}" alt="" draggable="false"><div class="pchip">${avHTML(who)}<b>${esc(mine ? 'คุณ' : (fp.name || ''))}</b><i>${rel(t)}</i></div>${m.text ? `<div class="pcap">${esc(m.text)}</div>` : ''}${rx}</div>`;
+    } else {
+      h += `<div class="mrow ${mine ? 'me' : ''}" data-mid="${m.id}">${mine ? '' : avHTML(fp)}<div class="bub ${mine ? 'me' : ''}">${esc(m.text)}${rx}</div></div>`;
+    }
+  });
+  msgsEl.innerHTML = h;
+  if(lastImg) $('#chead').style.setProperty('--hbg', `url('${lastImg}')`);
+  if(firstRender || nearBottom){ msgsEl.scrollTop = msgsEl.scrollHeight; if(msgs.length) firstRender = false; }
 }
-async function post(fid, data, preview){
-  await F.addDoc(F.collection(db, 'friendships', fid, 'messages'), { from: me.uid, ts: F.serverTimestamp(), ...data });
-  await F.updateDoc(F.doc(db, 'friendships', fid), { last: { text: preview, from: me.uid, ts: F.serverTimestamp() } });
+
+/* send text / quick emoji */
+async function sendVal(t){
+  t = (t || '').trim(); if(!t || !curFid) return;
+  try{ await post(curFid, { kind: 'text', text: t }, t.slice(0, 80)); }catch(e){ toast('ส่งไม่สำเร็จ'); }
 }
-async function sendText(){
-  const i = $('#cvInput'), t = i.value.trim(); if(!t || !curFid) return;
-  i.value = '';
-  try{ await post(curFid, { kind: 'text', text: t }, t.slice(0, 80)); }catch(e){ toast('ส่งไม่สำเร็จ'); i.value = t; }
-}
-$('#cvSend').onclick = sendText;
-$('#cvInput').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); sendText(); } });
-$('#cvBack').onclick = closeConvo;
-$('#cvBlock').onclick = async () => { const f = friendships[curFid]; if(f) { try{ await blockUser(other(f)); }catch(e){ toast(errMsg(e)); } } };
-$('#cvPhoto').onclick = () => $('#cvPick').click();
-$('#cvPick').onchange = async e => {
-  const f = e.target.files[0]; e.target.value = ''; if(!f || !curFid) return;
-  try{ await post(curFid, { kind: 'photo', img: await shrink(f), text: '' }, '📷 รูปภาพ'); }catch(err){ toast('ส่งรูปไม่สำเร็จ'); }
+const cvInput = $('#cvInput'), cvPill = $('#cvPill');
+const syncTyping = () => cvPill.classList.toggle('typing', cvInput.value.trim().length > 0);
+cvInput.addEventListener('input', syncTyping);
+cvInput.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); $('#cvSend').click(); } });
+$('#cvSend').onclick = async () => { const t = cvInput.value; cvInput.value = ''; syncTyping(); await sendVal(t); };
+$('#cvQuick').onclick = e => {
+  const q = e.target.closest('[data-q]'); if(q){ sendVal(q.dataset.q); return; }
+  if(e.target.closest('#cvEmoji')) openPicker(em => { cvInput.value += em; syncTyping(); cvInput.focus(); });
 };
+$('#cvBack').onclick = closeConvo;
+$('#cvBlock').onclick = async () => { const f = friendships[curFid]; if(f){ try{ await blockUser(other(f)); }catch(e){ toast(errMsg(e)); } } };
+
+/* ---------- reactions + long-press menu ---------- */
+let lpT = null, lpFired = false, lpPos = null, rxMsg = null, rxEl = null;
+const findMsg = id => msgs.find(m => m.id === id);
+msgsEl.addEventListener('pointerdown', e => {
+  const t = e.target.closest('[data-mid]'); if(!t) return;
+  lpFired = false; lpPos = { x: e.clientX, y: e.clientY };
+  clearTimeout(lpT);
+  lpT = setTimeout(() => { lpFired = true; if(navigator.vibrate) navigator.vibrate(15); openRx(t); }, 420);
+});
+msgsEl.addEventListener('pointermove', e => { if(lpPos && Math.hypot(e.clientX - lpPos.x, e.clientY - lpPos.y) > 10) clearTimeout(lpT); });
+['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => msgsEl.addEventListener(ev, () => clearTimeout(lpT)));
+msgsEl.addEventListener('contextmenu', e => { e.preventDefault(); const t = e.target.closest('[data-mid]'); if(t && !lpFired) openRx(t); });
+msgsEl.addEventListener('click', e => {
+  if(lpFired){ lpFired = false; return; }
+  const ph = e.target.closest('.pmsg'); if(!ph) return;
+  const m = findMsg(ph.dataset.mid); if(m) openLightbox(m.img);
+});
+
+function openRx(el){
+  const m = findMsg(el.dataset.mid); if(!m) return;
+  closeRx(); rxMsg = m; rxEl = el; el.classList.add('hl');
+  const mine = m.from === me.uid, my = (m.reactions || {})[me.uid];
+  const bar = $('#rxBar'), menu = $('#rxMenu');
+  bar.innerHTML = QUICK.map(e => `<button data-e="${e}" class="${my === e ? 'on' : ''}">${e}</button>`).join('') + '<button data-e="+" aria-label="อีโมจิอื่น"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="13" r="8.5"/><path d="M7.5 14.5c1 1.6 2.2 2.3 3.5 2.3s2.5-.7 3.5-2.3"/><circle cx="8.5" cy="11" r=".6" fill="#aaa"/><circle cx="13.5" cy="11" r=".6" fill="#aaa"/><path d="M19 2.5v5M16.5 5h5"/></svg></button>';
+  let items = '';
+  if(m.kind !== 'photo' && m.text) items += '<button data-a="copy">คัดลอกข้อความ</button>';
+  if(m.kind === 'photo') items += '<button data-a="save">บันทึกรูป</button>';
+  if(!mine) items += '<button data-a="report" class="red">รายงาน</button>';
+  menu.innerHTML = items; menu.style.display = items ? '' : 'none';
+  $('#rx').classList.add('on'); window.scaleSvgs && window.scaleSvgs();
+  // position next to the message
+  const page = $('#p-convo').getBoundingClientRect(), r = el.getBoundingClientRect();
+  const bw = bar.offsetWidth, bh = bar.offsetHeight, mh = items ? menu.offsetHeight : 0, mw = menu.offsetWidth, gap = 12;
+  const total = bh + (mh ? gap + mh : 0);
+  let top = r.bottom + gap;
+  if(top + total > page.bottom - 16) top = r.top - gap - total;
+  if(top < page.top + 16) top = Math.max(page.top + 16, page.bottom - 16 - total);
+  const clamp = (v, w) => Math.min(Math.max(v, page.left + 12), page.right - w - 12);
+  const left = mine ? r.right - bw : r.left;
+  bar.style.top = (top - page.top) + 'px'; bar.style.left = (clamp(left, bw) - page.left) + 'px';
+  if(mh){ menu.style.top = (top - page.top + bh + gap) + 'px'; menu.style.left = (clamp(mine ? r.right - mw : r.left, mw) - page.left) + 'px'; }
+}
+function closeRx(){
+  $('#rx').classList.remove('on');
+  if(rxEl) rxEl.classList.remove('hl');
+  rxEl = null;
+}
+async function react(m, emoji){
+  if(!m || !curFid) return;
+  const cur = (m.reactions || {})[me.uid];
+  try{ await F.updateDoc(F.doc(db, 'friendships', curFid, 'messages', m.id), { ['reactions.' + me.uid]: cur === emoji ? F.deleteField() : emoji }); }
+  catch(e){ toast(errMsg(e)); }
+}
+function saveDataUrl(url){ const a = document.createElement('a'); a.href = url; a.download = `auan-${Date.now()}.jpg`; document.body.appendChild(a); a.click(); a.remove(); }
+async function reportMsg(m){
+  if(!confirm('รายงานข้อความนี้ว่าไม่เหมาะสมหรือรบกวน?')) return;
+  try{
+    await F.addDoc(F.collection(db, 'reports'), { reporter: me.uid, reported: m.from, fid: curFid, mid: m.id, kind: m.kind || 'text', text: (m.text || '').slice(0, 300), ts: F.serverTimestamp() });
+    toast('ส่งรายงานแล้ว');
+    if(confirm('ต้องการบล็อกผู้ใช้นี้ด้วยไหม?')) await blockUser(m.from, true);
+  }catch(e){ toast(errMsg(e)); }
+}
+$('#rx').addEventListener('click', async e => {
+  if(e.target.classList.contains('rxbg')){ closeRx(); return; }
+  const m = rxMsg;
+  const be = e.target.closest('[data-e]'), ba = e.target.closest('[data-a]');
+  if(be){
+    const em = be.dataset.e; closeRx();
+    if(em === '+') openPicker(x => react(m, x)); else react(m, em);
+  } else if(ba){
+    const a = ba.dataset.a; closeRx();
+    if(a === 'copy'){ try{ await navigator.clipboard.writeText(m.text); toast('คัดลอกแล้ว'); }catch(err){ toast('คัดลอกไม่ได้'); } }
+    else if(a === 'save') saveDataUrl(m.img);
+    else if(a === 'report') await reportMsg(m);
+  }
+});
+
+/* ---------- lightbox ---------- */
+function openLightbox(src){ $('#lbImg').src = src; $('#lb').classList.add('on'); }
+$('#lb').addEventListener('click', e => { if(!e.target.closest('#lbSave')) $('#lb').classList.remove('on'); });
+$('#lbSave').onclick = () => saveDataUrl($('#lbImg').src);
+
+/* ---------- emoji picker ---------- */
+let emoData = null, pickCb = null, emoCat = 'smile';
+const TH = { 'หัวใจ': 'heart', 'รัก': 'heart', 'ยิ้ม': 'smil', 'หัวเราะ': 'laugh', 'ขำ': 'joy', 'ร้องไห้': 'cry', 'โกรธ': 'angry', 'ไฟ': 'fire', 'แมว': 'cat', 'หมา': 'dog', 'สุนัข': 'dog', 'ดาว': 'star', 'ตา': 'eye', 'มือ': 'hand', 'จูบ': 'kiss', 'อาหาร': 'food', 'ขนม': 'cake', 'ดอกไม้': 'flower', 'เศร้า': 'sad', 'กลัว': 'fear', 'หลับ': 'sleep', 'ง่วง': 'sleep', 'เท่': 'sunglasses', 'ผี': 'ghost', 'ปาร์ตี้': 'party', 'เงิน': 'money', 'รถ': 'car', 'กิน': 'food', 'หมู': 'pig', 'หมี': 'bear', 'กระต่าย': 'rabbit', 'ลิง': 'monkey' };
+async function openPicker(cb){
+  try{ if(!emoData) emoData = (await import('./emoji.js?v=4')).EMOJI; }catch(e){ toast('โหลดอีโมจิไม่ได้'); return; }
+  pickCb = cb; $('#emoSearch').value = '';
+  $('#emoTabs').innerHTML = emoData.cats.map(c => `<button data-c="${c.id}" aria-label="${c.title}">${c.icon}</button>`).join('');
+  drawEmoji(emoCat); $('#emo').classList.add('on');
+}
+function drawEmoji(cat, q){
+  const grid = $('#emoGrid'); let list, title;
+  if(q){
+    let t = q.toLowerCase().trim(); Object.keys(TH).forEach(k => { if(t.includes(k)) t = t.replace(k, TH[k]); });
+    const words = t.split(/\s+/).filter(Boolean);
+    list = Object.values(emoData.items).flat().filter(([e, n]) => words.every(w => n.includes(w) || e === w));
+    title = `ผลการค้นหา (${list.length})`;
+  } else { emoCat = cat; list = emoData.items[cat]; title = emoData.cats.find(c => c.id === cat).title; }
+  $('#emoTitle').textContent = title;
+  grid.innerHTML = list.length ? list.map(([e, n]) => `<button data-e="${e}" title="${n}">${e}</button>`).join('') : '<p>ไม่พบอีโมจิ ลองค้นหาเป็นภาษาอังกฤษ เช่น heart, cat</p>';
+  grid.scrollTop = 0;
+  $$('#emoTabs button').forEach(b => b.classList.toggle('on', !q && b.dataset.c === cat));
+}
+const $$ = s => document.querySelectorAll(s);
+$('#emoTabs').addEventListener('click', e => { const b = e.target.closest('[data-c]'); if(b){ $('#emoSearch').value = ''; drawEmoji(b.dataset.c); } });
+$('#emoSearch').addEventListener('input', e => { const v = e.target.value; v.trim() ? drawEmoji(null, v) : drawEmoji(emoCat); });
+$('#emoGrid').addEventListener('click', e => { const b = e.target.closest('[data-e]'); if(!b) return; const cb = pickCb; $('#emo').classList.remove('on'); if(cb) cb(b.dataset.e); });
+$('.emobg').addEventListener('click', () => $('#emo').classList.remove('on'));
 
 /* ---------- send photo: choose recipients ---------- */
 window.onPreviewOpen = () => {};
