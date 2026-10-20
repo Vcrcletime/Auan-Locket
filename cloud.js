@@ -1,5 +1,9 @@
 import { firebaseConfig } from './firebase-config.js';
 
+if(!document.querySelector('#cvPill') || !document.querySelector('#rx')){
+  if(window.toast) window.toast('index.html เป็นเวอร์ชันเก่า ให้อัปโหลดทับด้วยไฟล์ล่าสุด');
+  throw new Error('index.html is outdated');
+}
 const V = '10.12.2', B = `https://www.gstatic.com/firebasejs/${V}/`;
 const configured = !!firebaseConfig.apiKey && !/^YOUR/i.test(firebaseConfig.apiKey);
 const $ = s => document.querySelector(s);
@@ -36,12 +40,13 @@ const chatSvg = '<svg width="56" height="56" viewBox="0 0 24 24" fill="#333"><pa
 const emptyHTML = (t, d, extra = '') => `<div class="empty">${chatSvg}<b>${t}</b><span>${d}</span>${extra}</div>`;
 
 async function shrink(blob, max = 1080){
+  // always center-crop to 1:1
   const bmp = await createImageBitmap(blob);
-  const s = Math.min(1, max / Math.max(bmp.width, bmp.height));
-  const c = document.createElement('canvas');
-  c.width = Math.round(bmp.width * s); c.height = Math.round(bmp.height * s);
-  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
-  return c.toDataURL('image/jpeg', .72);
+  const s0 = Math.min(bmp.width, bmp.height), sx = (bmp.width - s0) / 2, sy = (bmp.height - s0) / 2;
+  const out = Math.min(max, s0);
+  const cv = document.createElement('canvas'); cv.width = cv.height = out;
+  cv.getContext('2d').drawImage(bmp, sx, sy, s0, s0, 0, 0, out, out);
+  return cv.toDataURL('image/jpeg', .74);
 }
 
 /* ---------- init ---------- */
@@ -243,10 +248,12 @@ function rel(ms){
   if(s < 604800) return Math.floor(s / 86400) + 'd'; return Math.floor(s / 604800) + 'w';
 }
 const msgsEl = $('#msgs');
+const seenMsgs = new Set(), seenRx = new Set();
+let convoReady = false;
 
 function openConvo(fid){
   const f = friendships[fid]; if(!f) return;
-  curFid = fid; firstRender = true; msgs = [];
+  curFid = fid; firstRender = true; msgs = []; seenMsgs.clear(); seenRx.clear(); convoReady = false;
   const p = people[other(f)] || {};
   $('#cvHead').innerHTML = avHTML(p) + `<b>${esc(p.name || '')}</b>`;
   $('#chead').style.removeProperty('--hbg');
@@ -262,31 +269,37 @@ function closeConvo(){
   if(unsubM) unsubM(); unsubM = null; curFid = null;
   $('#p-convo').classList.remove('on'); document.body.classList.remove('hidenav');
 }
-function reactHTML(m){
-  const em = Object.values(m.reactions || {}).filter(Boolean);
-  return em.length ? `<div class="rx">${em.map(e => `<span>${esc(e)}</span>`).join('')}</div>` : '';
+function reactHTML(m, anim){
+  const spans = Object.entries(m.reactions || {}).filter(([, e]) => e).map(([u, e]) => {
+    const k = `${m.id}|${u}|${e}`, pop = anim && !seenRx.has(k); seenRx.add(k);
+    return `<span class="${pop ? 'pop' : ''}">${esc(e)}</span>`;
+  });
+  return spans.length ? `<div class="rx">${spans.join('')}</div>` : '';
 }
 function renderMsgs(){
   const f = friendships[curFid]; if(!f) return;
-  const fp = people[other(f)] || {}, st = window.getSettings();
+  const fp = people[other(f)] || {}, st = window.getSettings(), anim = convoReady;
   const nearBottom = msgsEl.scrollHeight - msgsEl.scrollTop - msgsEl.clientHeight < 300;
   let prev = 0, h = '', lastImg = '';
   msgs.forEach(m => {
     const t = msgMs(m);
     if(!prev || t - prev > 3600000) h += `<div class="tdiv">${fmtDivider(t)}</div>`;
     prev = t;
-    const mine = m.from === me.uid, rx = reactHTML(m);
+    const mine = m.from === me.uid, rx = reactHTML(m, anim);
+    const nw = anim && !seenMsgs.has(m.id) ? ' new' : '';
+    seenMsgs.add(m.id);
     if(m.kind === 'photo'){
       lastImg = m.img;
       const who = mine ? { name: 'คุณ', avatar: st.avatar } : fp;
-      h += `<div class="pmsg" data-mid="${m.id}"><img src="${m.img}" alt="" draggable="false"><div class="pchip">${avHTML(who)}<b>${esc(mine ? 'คุณ' : (fp.name || ''))}</b><i>${rel(t)}</i></div>${m.text ? `<div class="pcap">${esc(m.text)}</div>` : ''}${rx}</div>`;
+      h += `<div class="pmsg ${mine ? 'me' : ''}${rx ? ' hasrx' : ''}${nw}" data-mid="${m.id}"><div class="pimg"><img src="${m.img}" alt="" draggable="false"><div class="pchip">${avHTML(who)}<b>${esc(mine ? 'คุณ' : (fp.name || ''))}</b><i>${rel(t)}</i></div>${m.text ? `<div class="pcap">${esc(m.text)}</div>` : ''}</div>${rx}</div>`;
     } else {
-      h += `<div class="mrow ${mine ? 'me' : ''}" data-mid="${m.id}">${mine ? '' : avHTML(fp)}<div class="bub ${mine ? 'me' : ''}">${esc(m.text)}${rx}</div></div>`;
+      h += `<div class="mrow ${mine ? 'me' : ''}${nw}" data-mid="${m.id}">${mine ? '' : avHTML(fp)}<div class="bub ${mine ? 'me' : ''}">${esc(m.text)}${rx}</div></div>`;
     }
   });
   msgsEl.innerHTML = h;
   if(lastImg) $('#chead').style.setProperty('--hbg', `url('${lastImg}')`);
   if(firstRender || nearBottom){ msgsEl.scrollTop = msgsEl.scrollHeight; if(msgs.length) firstRender = false; }
+  convoReady = true;
 }
 
 /* send text / quick emoji */
@@ -392,7 +405,7 @@ $('#lbSave').onclick = () => saveDataUrl($('#lbImg').src);
 let emoData = null, pickCb = null, emoCat = 'smile';
 const TH = { 'หัวใจ': 'heart', 'รัก': 'heart', 'ยิ้ม': 'smil', 'หัวเราะ': 'laugh', 'ขำ': 'joy', 'ร้องไห้': 'cry', 'โกรธ': 'angry', 'ไฟ': 'fire', 'แมว': 'cat', 'หมา': 'dog', 'สุนัข': 'dog', 'ดาว': 'star', 'ตา': 'eye', 'มือ': 'hand', 'จูบ': 'kiss', 'อาหาร': 'food', 'ขนม': 'cake', 'ดอกไม้': 'flower', 'เศร้า': 'sad', 'กลัว': 'fear', 'หลับ': 'sleep', 'ง่วง': 'sleep', 'เท่': 'sunglasses', 'ผี': 'ghost', 'ปาร์ตี้': 'party', 'เงิน': 'money', 'รถ': 'car', 'กิน': 'food', 'หมู': 'pig', 'หมี': 'bear', 'กระต่าย': 'rabbit', 'ลิง': 'monkey' };
 async function openPicker(cb){
-  try{ if(!emoData) emoData = (await import('./emoji.js?v=4')).EMOJI; }catch(e){ toast('โหลดอีโมจิไม่ได้'); return; }
+  try{ if(!emoData) emoData = (await import('./emoji.js?v=5')).EMOJI; }catch(e){ toast('โหลดอีโมจิไม่ได้'); return; }
   pickCb = cb; $('#emoSearch').value = '';
   $('#emoTabs').innerHTML = emoData.cats.map(c => `<button data-c="${c.id}" aria-label="${c.title}">${c.icon}</button>`).join('');
   drawEmoji(emoCat); $('#emo').classList.add('on');
