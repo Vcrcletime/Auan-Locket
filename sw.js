@@ -1,4 +1,4 @@
-const CACHE = 'auan-v4';
+const CACHE = 'auan-v6';
 const FILES = ['./', './index.html', './manifest.json', './icon.svg', './cloud.js', './emoji.js', './firebase-config.js'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).catch(()=>{}));
