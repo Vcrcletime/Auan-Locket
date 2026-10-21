@@ -1,6 +1,6 @@
 import { firebaseConfig } from './firebase-config.js';
 
-if(!document.querySelector('#cvPill') || !document.querySelector('#rx')){
+if(!document.querySelector('#cvPill') || !document.querySelector('#rx') || !document.querySelector('#btnGroup') || !window.Nav){
   if(window.toast) window.toast('index.html เป็นเวอร์ชันเก่า ให้อัปโหลดทับด้วยไฟล์ล่าสุด');
   throw new Error('index.html is outdated');
 }
@@ -12,9 +12,10 @@ const toast = m => window.toast && window.toast(m);
 const rescale = () => window.scaleSvgs && window.scaleSvgs();
 
 let A, F, auth, db;
-let me = null, meDoc = null, friendships = {}, people = {};
+let me = null, meDoc = null, friendships = {}, groups = {}, people = {};
 let blocks = {}, unsubB = null;
-let unsubF = null, unsubM = null, curFid = null, msgs = [], firstRender = true;
+let unsubF = null, unsubG = null, unsubM = null, curFid = null, curType = 'dm', msgs = [], firstRender = true;
+const Nav = window.Nav;
 
 const errMsg = e => ({
   'permission-denied': 'ถูกปฏิเสธสิทธิ์ ตรวจสอบว่า Publish Firestore Rules แล้ว',
@@ -77,14 +78,14 @@ async function onUser(u){
     if(st.name === 'Auan' && u.displayName) window.setProfile({ name: u.displayName });
     if(!meDoc || !meDoc.username) await claimUsername();
     await syncProfile();
-    listenFriendships(); listenBlocks();
+    listenFriendships(); listenBlocks(); listenGroups();
   }catch(e){ toast(errMsg(e)); }
   renderAll();
 }
 function cleanup(){
-  if(unsubF) unsubF(); if(unsubM) unsubM(); if(unsubB) unsubB(); unsubF = unsubM = unsubB = null;
-  friendships = {}; blocks = {}; people = {}; curFid = null;
-  $('#p-convo').classList.remove('on');
+  if(unsubF) unsubF(); if(unsubM) unsubM(); if(unsubB) unsubB(); if(unsubG) unsubG(); unsubF = unsubM = unsubB = unsubG = null;
+  friendships = {}; groups = {}; blocks = {}; people = {}; curFid = null;
+  $('#p-convo').classList.remove('on'); document.body.classList.remove('hidenav');
 }
 async function syncProfile(){
   if(!me) return; const st = window.getSettings();
@@ -124,9 +125,18 @@ function listenFriendships(){
     friendships = {};
     snap.forEach(d => friendships[d.id] = { id: d.id, ...d.data() });
     await Promise.all(Object.values(friendships).map(f => loadPerson(other(f))));
-    if(curFid && !friendships[curFid]){ closeConvo(); toast('บทสนทนานี้ไม่มีแล้ว'); }
+    if(curFid && curType === 'dm' && !friendships[curFid]){ closeConvo(); toast('บทสนทนานี้ไม่มีแล้ว'); }
     renderAll();
   }, () => toast('โหลดรายชื่อเพื่อนไม่ได้'));
+}
+function listenGroups(){
+  unsubG = F.onSnapshot(F.query(F.collection(db, 'groups'), F.where('members', 'array-contains', me.uid)), async snap => {
+    groups = {};
+    snap.forEach(d => groups[d.id] = { id: d.id, ...d.data() });
+    await Promise.all(Object.values(groups).flatMap(g => g.members.map(loadPerson)));
+    if(curFid && curType === 'g' && !groups[curFid]){ closeConvo(); toast('กลุ่มนี้ไม่มีแล้ว'); }
+    renderAll();
+  }, () => {});
 }
 async function sendRequest(uid){
   if(!me){ toast('เข้าสู่ระบบก่อน'); return; }
@@ -224,16 +234,24 @@ async function blockUser(uid, skip){
 }
 
 /* ---------- chat list ---------- */
+const PEOPLE_SVG = '<svg width="30" height="30" viewBox="0 0 24 24" fill="#fff"><circle cx="9" cy="8" r="3.6"/><path d="M2 19c0-3.5 3-5.6 7-5.6s7 2.1 7 5.6z"/><circle cx="17" cy="9" r="2.8"/><path d="M17.5 13.4c2.6.2 4.5 1.8 4.5 4.6h-4c0-1.9-.2-3.4-.5-4.6z"/></svg>';
+const groupAv = (cls = '') => `<div class="av gav ${cls}">${PEOPLE_SVG}</div>`;
+const lastKey = i => i.last ? (msOf(i.last.ts) || Date.now()) : 0;
 function renderChat(){
   const el = $('#chatBody'); if(!el) return;
   if(!configured){ el.innerHTML = emptyHTML('ยังไม่ได้ตั้งค่า Firebase', 'เปิดไฟล์ firebase-config.js แล้วใส่ค่าจากโปรเจกต์ Firebase ของคุณ'); return; }
   if(!me){ el.innerHTML = emptyHTML('เข้าสู่ระบบเพื่อแช็ตกับเพื่อน', 'ใช้บัญชี Google ของคุณ', '<button class="btn" data-act="login">เข้าสู่ระบบด้วย Google</button>'); return; }
   const inc = Object.values(friendships).filter(f => f.status === 'pending' && f.from !== me.uid).length;
-  const list = accepted().sort((a, b) => msOf(b.last && b.last.ts) - msOf(a.last && a.last.ts));
+  const items = [
+    ...accepted().map(f => { const p = people[other(f)] || {}; return { type: 'dm', id: f.id, last: f.last, name: p.name || '', av: avHTML(p) }; }),
+    ...Object.values(groups).map(g => ({ type: 'g', id: g.id, last: g.last, name: g.name, av: groupAv() }))
+  ].sort((x, y) => lastKey(y) - lastKey(x));
   let h = inc ? `<div class="crow reqrow" data-act="openreq"><div class="av ring" style="font-size:60px">+</div><div class="txt"><b>คำขอเป็นเพื่อน</b><small>มี ${inc} คำขอรอคุณอยู่</small></div></div>` : '';
-  h += list.map(f => { const p = people[other(f)] || {}, l = f.last;
-    return `<div class="crow" data-act="openconv" data-id="${f.id}">${avHTML(p)}<div class="txt"><b>${esc(p.name || '')}</b><small>${l ? (l.from === me.uid ? 'คุณ: ' : '') + esc(l.text || '') : 'ยังไม่มีข้อความ'}</small></div><time>${l ? fmtTime(msOf(l.ts)) : ''}</time></div>`; }).join('');
+  h += items.map(i => { const l = i.last;
+    const pre = !l ? '' : (l.from === me.uid ? 'คุณ: ' : (i.type === 'g' && l.name ? esc(l.name) + ': ' : ''));
+    return `<div class="crow" data-act="openconv" data-id="${i.id}" data-type="${i.type}">${i.av}<div class="txt"><b>${esc(i.name)}</b><small>${l ? pre + esc(l.text || '') : 'ยังไม่มีข้อความ'}</small></div><time>${l ? fmtTime(msOf(l.ts)) : ''}</time></div>`; }).join('');
   el.innerHTML = h || emptyHTML('ยังไม่มีแช็ต', 'กดปุ่มดินสอสีชมพูเพื่อเพิ่มเพื่อน');
+  rescale();
 }
 
 /* ---------- conversation ---------- */
@@ -250,25 +268,32 @@ function rel(ms){
 const msgsEl = $('#msgs');
 const seenMsgs = new Set(), seenRx = new Set();
 let convoReady = false;
+const colName = t => t === 'g' ? 'groups' : 'friendships';
+const msgCol = (t, id) => F.collection(db, colName(t), id, 'messages');
+const chatDoc = (t, id) => F.doc(db, colName(t), id);
+const whoIs = uid => uid === me.uid ? { name: 'คุณ', avatar: window.getSettings().avatar } : (people[uid] || {});
 
-function openConvo(fid){
-  const f = friendships[fid]; if(!f) return;
-  curFid = fid; firstRender = true; msgs = []; seenMsgs.clear(); seenRx.clear(); convoReady = false;
-  const p = people[other(f)] || {};
-  $('#cvHead').innerHTML = avHTML(p) + `<b>${esc(p.name || '')}</b>`;
+function openConvo(id, type = 'dm'){
+  const chat = type === 'g' ? groups[id] : friendships[id]; if(!chat) return;
+  curFid = id; curType = type; firstRender = true; msgs = []; seenMsgs.clear(); seenRx.clear(); convoReady = false;
+  if(type === 'g') $('#cvHead').innerHTML = groupAv() + `<div><b>${esc(chat.name)}</b><small>${chat.members.length} คน</small></div>`;
+  else { const p = people[other(chat)] || {}; $('#cvHead').innerHTML = avHTML(p) + `<b>${esc(p.name || '')}</b>`; }
+  $('#cvBlock').style.display = type === 'g' ? 'none' : '';
+  $('#cvLeave').style.display = type === 'g' ? '' : 'none';
   $('#chead').style.removeProperty('--hbg');
   msgsEl.innerHTML = '';
   $('#p-convo').classList.add('on'); document.body.classList.add('hidenav');
+  Nav.open('convo', closeConvoUI); rescale();
   if(unsubM) unsubM();
-  unsubM = F.onSnapshot(F.query(F.collection(db, 'friendships', fid, 'messages'), F.orderBy('ts', 'asc'), F.limitToLast(100)), snap => {
+  unsubM = F.onSnapshot(F.query(msgCol(type, id), F.orderBy('ts', 'asc'), F.limitToLast(100)), snap => {
     msgs = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderMsgs();
   }, () => toast('โหลดข้อความไม่ได้'));
 }
-function closeConvo(){
-  closeRx(); $('#emo').classList.remove('on'); $('#lb').classList.remove('on');
+function closeConvoUI(){
   if(unsubM) unsubM(); unsubM = null; curFid = null;
   $('#p-convo').classList.remove('on'); document.body.classList.remove('hidenav');
 }
+function closeConvo(){ if(Nav.has('convo')) Nav.close('convo'); else closeConvoUI(); }
 function reactHTML(m, anim){
   const spans = Object.entries(m.reactions || {}).filter(([, e]) => e).map(([u, e]) => {
     const k = `${m.id}|${u}|${e}`, pop = anim && !seenRx.has(k); seenRx.add(k);
@@ -277,23 +302,23 @@ function reactHTML(m, anim){
   return spans.length ? `<div class="rx">${spans.join('')}</div>` : '';
 }
 function renderMsgs(){
-  const f = friendships[curFid]; if(!f) return;
-  const fp = people[other(f)] || {}, st = window.getSettings(), anim = convoReady;
+  const isG = curType === 'g', chat = isG ? groups[curFid] : friendships[curFid]; if(!chat) return;
+  const anim = convoReady;
   const nearBottom = msgsEl.scrollHeight - msgsEl.scrollTop - msgsEl.clientHeight < 300;
-  let prev = 0, h = '', lastImg = '';
+  let prev = 0, prevFrom = null, h = '', lastImg = '';
   msgs.forEach(m => {
     const t = msgMs(m);
-    if(!prev || t - prev > 3600000) h += `<div class="tdiv">${fmtDivider(t)}</div>`;
+    if(!prev || t - prev > 3600000){ h += `<div class="tdiv">${fmtDivider(t)}</div>`; prevFrom = null; }
     prev = t;
-    const mine = m.from === me.uid, rx = reactHTML(m, anim);
+    const mine = m.from === me.uid, rx = reactHTML(m, anim), w = whoIs(m.from);
     const nw = anim && !seenMsgs.has(m.id) ? ' new' : '';
     seenMsgs.add(m.id);
+    const showName = isG && !mine && prevFrom !== m.from; prevFrom = m.from;
     if(m.kind === 'photo'){
       lastImg = m.img;
-      const who = mine ? { name: 'คุณ', avatar: st.avatar } : fp;
-      h += `<div class="pwrap ${mine ? 'me' : ''}${nw}" data-mid="${m.id}"><div class="pmsg"><div class="pimg"><img src="${m.img}" alt="" draggable="false"><div class="pchip">${avHTML(who)}<b>${esc(mine ? 'คุณ' : (fp.name || ''))}</b><i>${rel(t)}</i></div>${m.text ? `<div class="pcap">${esc(m.text)}</div>` : ''}</div></div>${rx}</div>`;
+      h += `<div class="pwrap ${mine ? 'me' : ''}${nw}" data-mid="${m.id}"><div class="pmsg"><div class="pimg"><img src="${m.img}" alt="" draggable="false"><div class="pchip">${avHTML(w)}<b>${esc(mine ? 'คุณ' : (w.name || ''))}</b><i>${rel(t)}</i></div>${m.text ? `<div class="pcap">${esc(m.text)}</div>` : ''}</div></div>${rx}</div>`;
     } else {
-      h += `<div class="mrow ${mine ? 'me' : ''}${nw}" data-mid="${m.id}">${mine ? '' : avHTML(fp)}<div class="mcol"><div class="bub ${mine ? 'me' : ''}">${esc(m.text)}</div>${rx}</div></div>`;
+      h += `<div class="mrow ${mine ? 'me' : ''}${nw}" data-mid="${m.id}">${mine ? '' : avHTML(w)}<div class="mcol">${showName ? `<div class="sname">${esc(w.name || '')}</div>` : ''}<div class="bub ${mine ? 'me' : ''}">${esc(m.text)}</div>${rx}</div></div>`;
     }
   });
   msgsEl.innerHTML = h;
@@ -303,15 +328,17 @@ function renderMsgs(){
 }
 
 /* write a message + update the chat preview */
-async function post(fid, data, preview){
-  await F.addDoc(F.collection(db, 'friendships', fid, 'messages'), { from: me.uid, ts: F.serverTimestamp(), ...data });
-  await F.updateDoc(F.doc(db, 'friendships', fid), { last: { text: preview, from: me.uid, ts: F.serverTimestamp() } });
+async function post(type, id, data, preview){
+  await F.addDoc(msgCol(type, id), { from: me.uid, ts: F.serverTimestamp(), ...data });
+  const last = { text: preview, from: me.uid, ts: F.serverTimestamp() };
+  if(type === 'g') last.name = window.getSettings().name;
+  await F.updateDoc(chatDoc(type, id), { last });
 }
 
 /* send text / quick emoji */
 async function sendVal(t){
   t = (t || '').trim(); if(!t || !curFid) return;
-  try{ await post(curFid, { kind: 'text', text: t }, t.slice(0, 80)); }catch(e){ toast('ส่งไม่สำเร็จ: ' + errMsg(e)); }
+  try{ await post(curType, curFid, { kind: 'text', text: t }, t.slice(0, 80)); }catch(e){ toast('ส่งไม่สำเร็จ: ' + errMsg(e)); }
 }
 const cvInput = $('#cvInput'), cvPill = $('#cvPill');
 const syncTyping = () => cvPill.classList.toggle('typing', cvInput.value.trim().length > 0);
@@ -324,6 +351,15 @@ $('#cvQuick').onclick = e => {
 };
 $('#cvBack').onclick = closeConvo;
 $('#cvBlock').onclick = async () => { const f = friendships[curFid]; if(f){ try{ await blockUser(other(f)); }catch(e){ toast(errMsg(e)); } } };
+$('#cvLeave').onclick = async () => {
+  const g = groups[curFid]; if(!g || !confirm(`ออกจากกลุ่ม "${g.name}"?`)) return;
+  try{
+    closeConvo();
+    if(g.members.length <= 1) await F.deleteDoc(chatDoc('g', g.id));
+    else await F.updateDoc(chatDoc('g', g.id), { members: F.arrayRemove(me.uid) });
+    toast('ออกจากกลุ่มแล้ว');
+  }catch(e){ toast(errMsg(e)); }
+};
 
 /* ---------- reactions + long-press menu ---------- */
 let lpT = null, lpFired = false, lpPos = null, rxMsg = null, rxEl = null;
@@ -345,7 +381,7 @@ msgsEl.addEventListener('click', e => {
 
 function openRx(el){
   const m = findMsg(el.dataset.mid); if(!m) return;
-  closeRx(); rxMsg = m; rxEl = el; el.classList.add('hl');
+  closeRxUI(); rxMsg = m; rxEl = el; el.classList.add('hl');
   const mine = m.from === me.uid, my = (m.reactions || {})[me.uid];
   const bar = $('#rxBar'), menu = $('#rxMenu');
   bar.innerHTML = QUICK.map(e => `<button data-e="${e}" class="${my === e ? 'on' : ''}">${e}</button>`).join('') + '<button data-e="+" aria-label="อีโมจิอื่น"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="13" r="8.5"/><path d="M7.5 14.5c1 1.6 2.2 2.3 3.5 2.3s2.5-.7 3.5-2.3"/><circle cx="8.5" cy="11" r=".6" fill="#aaa"/><circle cx="13.5" cy="11" r=".6" fill="#aaa"/><path d="M19 2.5v5M16.5 5h5"/></svg></button>';
@@ -354,8 +390,7 @@ function openRx(el){
   if(m.kind === 'photo') items += '<button data-a="save">บันทึกรูป</button>';
   if(!mine) items += '<button data-a="report" class="red">รายงาน</button>';
   menu.innerHTML = items; menu.style.display = items ? '' : 'none';
-  $('#rx').classList.add('on'); window.scaleSvgs && window.scaleSvgs();
-  // position next to the message
+  $('#rx').classList.add('on'); Nav.open('rx', closeRxUI); rescale();
   const page = $('#p-convo').getBoundingClientRect(), r = el.getBoundingClientRect();
   const bw = bar.offsetWidth, bh = bar.offsetHeight, mh = items ? menu.offsetHeight : 0, mw = menu.offsetWidth, gap = 12;
   const total = bh + (mh ? gap + mh : 0);
@@ -367,22 +402,19 @@ function openRx(el){
   bar.style.top = (top - page.top) + 'px'; bar.style.left = (clamp(left, bw) - page.left) + 'px';
   if(mh){ menu.style.top = (top - page.top + bh + gap) + 'px'; menu.style.left = (clamp(mine ? r.right - mw : r.left, mw) - page.left) + 'px'; }
 }
-function closeRx(){
-  $('#rx').classList.remove('on');
-  if(rxEl) rxEl.classList.remove('hl');
-  rxEl = null;
-}
+function closeRxUI(){ $('#rx').classList.remove('on'); if(rxEl) rxEl.classList.remove('hl'); rxEl = null; }
+function closeRx(){ if(Nav.has('rx')) Nav.close('rx'); else closeRxUI(); }
 async function react(m, emoji){
   if(!m || !curFid) return;
   const cur = (m.reactions || {})[me.uid];
-  try{ await F.updateDoc(F.doc(db, 'friendships', curFid, 'messages', m.id), { ['reactions.' + me.uid]: cur === emoji ? F.deleteField() : emoji }); }
+  try{ await F.updateDoc(F.doc(db, colName(curType), curFid, 'messages', m.id), { ['reactions.' + me.uid]: cur === emoji ? F.deleteField() : emoji }); }
   catch(e){ toast(errMsg(e)); }
 }
 function saveDataUrl(url){ const a = document.createElement('a'); a.href = url; a.download = `auan-${Date.now()}.jpg`; document.body.appendChild(a); a.click(); a.remove(); }
 async function reportMsg(m){
   if(!confirm('รายงานข้อความนี้ว่าไม่เหมาะสมหรือรบกวน?')) return;
   try{
-    await F.addDoc(F.collection(db, 'reports'), { reporter: me.uid, reported: m.from, fid: curFid, mid: m.id, kind: m.kind || 'text', text: (m.text || '').slice(0, 300), ts: F.serverTimestamp() });
+    await F.addDoc(F.collection(db, 'reports'), { reporter: me.uid, reported: m.from, fid: curFid, chatType: curType, mid: m.id, kind: m.kind || 'text', text: (m.text || '').slice(0, 300), ts: F.serverTimestamp() });
     toast('ส่งรายงานแล้ว');
     if(confirm('ต้องการบล็อกผู้ใช้นี้ด้วยไหม?')) await blockUser(m.from, true);
   }catch(e){ toast(errMsg(e)); }
@@ -403,18 +435,22 @@ $('#rx').addEventListener('click', async e => {
 });
 
 /* ---------- lightbox ---------- */
-function openLightbox(src){ $('#lbImg').src = src; $('#lb').classList.add('on'); }
-$('#lb').addEventListener('click', e => { if(!e.target.closest('#lbSave')) $('#lb').classList.remove('on'); });
+const closeLbUI = () => $('#lb').classList.remove('on');
+const closeLb = () => Nav.has('lb') ? Nav.close('lb') : closeLbUI();
+function openLightbox(src){ $('#lbImg').src = src; $('#lb').classList.add('on'); Nav.open('lb', closeLbUI); }
+$('#lb').addEventListener('click', e => { if(!e.target.closest('#lbSave')) closeLb(); });
 $('#lbSave').onclick = () => saveDataUrl($('#lbImg').src);
 
 /* ---------- emoji picker ---------- */
 let emoData = null, pickCb = null, emoCat = 'smile';
 const TH = { 'หัวใจ': 'heart', 'รัก': 'heart', 'ยิ้ม': 'smil', 'หัวเราะ': 'laugh', 'ขำ': 'joy', 'ร้องไห้': 'cry', 'โกรธ': 'angry', 'ไฟ': 'fire', 'แมว': 'cat', 'หมา': 'dog', 'สุนัข': 'dog', 'ดาว': 'star', 'ตา': 'eye', 'มือ': 'hand', 'จูบ': 'kiss', 'อาหาร': 'food', 'ขนม': 'cake', 'ดอกไม้': 'flower', 'เศร้า': 'sad', 'กลัว': 'fear', 'หลับ': 'sleep', 'ง่วง': 'sleep', 'เท่': 'sunglasses', 'ผี': 'ghost', 'ปาร์ตี้': 'party', 'เงิน': 'money', 'รถ': 'car', 'กิน': 'food', 'หมู': 'pig', 'หมี': 'bear', 'กระต่าย': 'rabbit', 'ลิง': 'monkey' };
+const closeEmoUI = () => $('#emo').classList.remove('on');
+const closeEmo = () => Nav.has('emo') ? Nav.close('emo') : closeEmoUI();
 async function openPicker(cb){
-  try{ if(!emoData) emoData = (await import('./emoji.js?v=5')).EMOJI; }catch(e){ toast('โหลดอีโมจิไม่ได้'); return; }
+  try{ if(!emoData) emoData = (await import('./emoji.js?v=7')).EMOJI; }catch(e){ toast('โหลดอีโมจิไม่ได้'); return; }
   pickCb = cb; $('#emoSearch').value = '';
   $('#emoTabs').innerHTML = emoData.cats.map(c => `<button data-c="${c.id}" aria-label="${c.title}">${c.icon}</button>`).join('');
-  drawEmoji(emoCat); $('#emo').classList.add('on');
+  drawEmoji(emoCat); $('#emo').classList.add('on'); Nav.open('emo', closeEmoUI);
 }
 function drawEmoji(cat, q){
   const grid = $('#emoGrid'); let list, title;
@@ -432,34 +468,75 @@ function drawEmoji(cat, q){
 const $$ = s => document.querySelectorAll(s);
 $('#emoTabs').addEventListener('click', e => { const b = e.target.closest('[data-c]'); if(b){ $('#emoSearch').value = ''; drawEmoji(b.dataset.c); } });
 $('#emoSearch').addEventListener('input', e => { const v = e.target.value; v.trim() ? drawEmoji(null, v) : drawEmoji(emoCat); });
-$('#emoGrid').addEventListener('click', e => { const b = e.target.closest('[data-e]'); if(!b) return; const cb = pickCb; $('#emo').classList.remove('on'); if(cb) cb(b.dataset.e); });
-$('.emobg').addEventListener('click', () => $('#emo').classList.remove('on'));
+$('#emoGrid').addEventListener('click', e => { const b = e.target.closest('[data-e]'); if(!b) return; const cb = pickCb; closeEmo(); if(cb) cb(b.dataset.e); });
+$('.emobg').addEventListener('click', closeEmo);
 
-/* ---------- send photo: choose recipients ---------- */
+/* ---------- create group ---------- */
+const closeGrpUI = () => $('#grpBg').classList.remove('on');
+const closeGrp = () => Nav.has('group') ? Nav.close('group') : closeGrpUI();
+function openGroupSheet(){
+  if(!me){ toast('เข้าสู่ระบบก่อน'); return; }
+  const fr = accepted();
+  if(!fr.length){ toast('ต้องมีเพื่อนก่อนถึงจะสร้างกลุ่มได้'); return; }
+  const sel = new Set(), bg = $('#grpBg'), list = $('#grpList'), go = $('#grpGo'), nameEl = $('#grpName');
+  nameEl.value = '';
+  const check = () => { go.disabled = !(sel.size >= 1 && nameEl.value.trim()); go.textContent = sel.size ? `สร้างกลุ่ม (${sel.size + 1} คน)` : 'สร้างกลุ่ม'; };
+  const draw = () => {
+    list.innerHTML = fr.map(f => { const u = other(f), p = people[u] || {};
+      return `<div class="srow ${sel.has(u) ? 'on' : ''}" data-uid="${u}">${avHTML(p)}<b>${esc(p.name || '')}</b><i class="chk"></i></div>`; }).join('');
+    check();
+  };
+  list.onclick = e => { const r = e.target.closest('.srow'); if(!r) return; const u = r.dataset.uid; sel.has(u) ? sel.delete(u) : sel.add(u); draw(); };
+  nameEl.oninput = check;
+  $('#grpCancel').onclick = closeGrp;
+  bg.onclick = e => { if(e.target === bg) closeGrp(); };
+  go.onclick = async () => {
+    const name = nameEl.value.trim().slice(0, 30), members = [me.uid, ...sel];
+    go.disabled = true;
+    try{
+      const st = window.getSettings();
+      const last = { text: 'สร้างกลุ่มแล้ว', from: me.uid, name: st.name, ts: F.serverTimestamp() };
+      const ref = await F.addDoc(F.collection(db, 'groups'), { name, owner: me.uid, members, createdAt: F.serverTimestamp(), last });
+      groups[ref.id] = { id: ref.id, name, owner: me.uid, members, last: null };
+      closeGrp(); renderAll(); openConvo(ref.id, 'g');
+    }catch(e){ toast('สร้างกลุ่มไม่สำเร็จ: ' + errMsg(e)); go.disabled = false; }
+  };
+  draw(); bg.classList.add('on'); Nav.open('group', closeGrpUI); rescale();
+}
+$('#btnGroup').onclick = openGroupSheet;
+
+/* ---------- send photo: choose recipients (friends + groups) ---------- */
 window.onPreviewOpen = () => {};
 window.chooseRecipients = () => new Promise(resolve => {
   if(!me){ toast('เข้าสู่ระบบในแท็บแช็ตเพื่อส่งให้เพื่อน (บันทึกในเครื่องก่อน)'); resolve([]); return; }
-  const fr = accepted();
-  if(!fr.length){ toast('ยังไม่มีเพื่อน บันทึกในเครื่องอย่างเดียว'); resolve([]); return; }
+  const targets = [
+    ...accepted().map(f => ({ key: 'dm:' + f.id, av: avHTML(people[other(f)] || {}), name: (people[other(f)] || {}).name || '' })),
+    ...Object.values(groups).map(g => ({ key: 'g:' + g.id, av: groupAv(), name: g.name + ' (กลุ่ม)' }))
+  ];
+  if(!targets.length){ toast('ยังไม่มีเพื่อน บันทึกในเครื่องอย่างเดียว'); resolve([]); return; }
   const sel = new Set(), bg = $('#sendBg'), list = $('#sendList'), go = $('#sendGo'), all = $('#sendAll');
   const draw = () => {
-    list.innerHTML = fr.map(f => { const p = people[other(f)] || {};
-      return `<div class="srow ${sel.has(f.id) ? 'on' : ''}" data-fid="${f.id}">${avHTML(p)}<b>${esc(p.name || '')}</b><i class="chk"></i></div>`; }).join('');
-    all.classList.toggle('on', sel.size === fr.length);
-    go.textContent = sel.size ? `ส่ง (${sel.size})` : 'ส่ง'; go.disabled = !sel.size;
+    list.innerHTML = targets.map(t => `<div class="srow ${sel.has(t.key) ? 'on' : ''}" data-key="${t.key}">${t.av}<b>${esc(t.name)}</b><i class="chk"></i></div>`).join('');
+    all.classList.toggle('on', sel.size === targets.length);
+    go.textContent = sel.size ? `ส่ง (${sel.size})` : 'ส่ง'; go.disabled = !sel.size; rescale();
   };
-  const done = v => { bg.classList.remove('on'); list.onclick = all.onclick = go.onclick = $('#sendSkip').onclick = bg.onclick = null; resolve(v); };
-  list.onclick = e => { const r = e.target.closest('.srow'); if(!r) return; const id = r.dataset.fid; sel.has(id) ? sel.delete(id) : sel.add(id); draw(); };
-  all.onclick = () => { if(sel.size === fr.length) sel.clear(); else fr.forEach(f => sel.add(f.id)); draw(); };
+  let finished = false;
+  const done = v => {
+    if(finished) return; finished = true;
+    bg.classList.remove('on'); list.onclick = all.onclick = go.onclick = $('#sendSkip').onclick = bg.onclick = null;
+    resolve(v); if(Nav.has('send')) Nav.close('send');
+  };
+  list.onclick = e => { const r = e.target.closest('.srow'); if(!r) return; const k = r.dataset.key; sel.has(k) ? sel.delete(k) : sel.add(k); draw(); };
+  all.onclick = () => { if(sel.size === targets.length) sel.clear(); else targets.forEach(t => sel.add(t.key)); draw(); };
   go.onclick = () => done([...sel]);
   $('#sendSkip').onclick = () => done([]);
   bg.onclick = e => { if(e.target === bg) done(null); };
-  draw(); bg.classList.add('on');
+  draw(); bg.classList.add('on'); Nav.open('send', () => done(null));
 });
 window.onPhotoSaved = async (p, cap, to) => {
   if(!me || !to || !to.length || !p) return false;
   const img = await shrink(p.blob);
-  await Promise.all(to.map(fid => post(fid, { kind: 'photo', img, text: cap || '' }, '📷 รูปภาพ')));
+  await Promise.all(to.map(k => { const i = k.indexOf(':'), t = k.slice(0, i), id = k.slice(i + 1); return post(t === 'g' ? 'g' : 'dm', id, { kind: 'photo', img, text: cap || '' }, '📷 รูปภาพ'); }));
   return true;
 };
 
@@ -502,11 +579,11 @@ document.addEventListener('click', async e => {
     else if(act === 'remove') await removeFriendship(id, !!t.dataset.confirm);
     else if(act === 'block') await blockUser(t.dataset.uid);
     else if(act === 'unblock'){ if(confirm('ปลดบล็อกผู้ใช้นี้?')) await F.deleteDoc(F.doc(db, 'blocks', me.uid + '_' + t.dataset.uid)); }
-    else if(act === 'openconv') openConvo(id);
-    else if(act === 'openreq') $('#sheetBg').classList.add('on');
+    else if(act === 'openconv') openConvo(id, t.dataset.type || 'dm');
+    else if(act === 'openreq') window.openFriends();
   }catch(err){ toast('ทำรายการไม่สำเร็จ: ' + (err.code || err.message)); }
 });
-$('#btnCompose').onclick = () => $('#sheetBg').classList.add('on');
+$('#btnCompose').onclick = () => window.openFriends();
 $('#fsInput').addEventListener('keydown', e => { if(e.key === 'Enter') addFriend(); });
 
 init();

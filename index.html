@@ -278,6 +278,11 @@ button:active{transform:scale(.92)}
 .pwrap .rx{margin-top:calc(-54 * var(--u));margin-left:calc(70 * var(--u));margin-right:calc(70 * var(--u))}
 .mrow.new,.pwrap.new{animation:msgIn .32s cubic-bezier(.2,1.2,.4,1) backwards}
 .rx span.pop{animation:badgePop .4s cubic-bezier(.2,1.4,.4,1) backwards}
+
+.fab.fabL{right:auto;left:calc(var(--gx) + calc(55 * var(--u)));background:var(--card2)}
+.av.gav{background:linear-gradient(135deg,#ff5fa2,#b83a78);display:grid;place-items:center}
+.chead small{display:block;font-size:calc(38 * var(--u));color:#d8d8d8;font-weight:400;margin-top:calc(2 * var(--u))}
+.sname{font-size:calc(38 * var(--u));color:#9a9a9a;margin:0 0 calc(8 * var(--u)) calc(22 * var(--u))}
 </style>
 </head>
 <body>
@@ -328,6 +333,7 @@ button:active{transform:scale(.92)}
 <section class="screen" id="s-chat">
   <div class="top"><h1>แช็ต</h1><span></span><button class="av" data-profile aria-label="โปรไฟล์"></button></div>
   <div class="scroll" id="chatBody" style="padding:0;display:flex;flex-direction:column"></div>
+  <button class="fab fabL" id="btnGroup" aria-label="สร้างกลุ่ม"><svg width="34" height="34" viewBox="0 0 24 24" fill="#ff5fa2"><circle cx="9" cy="8" r="3.6"/><path d="M2 19c0-3.5 3-5.6 7-5.6s7 2.1 7 5.6z"/><circle cx="17" cy="9" r="2.8"/><path d="M17.5 13.4c2.6.2 4.5 1.8 4.5 4.6h-4c0-1.9-.2-3.4-.5-4.6z"/></svg></button>
   <button class="fab" id="btnCompose" aria-label="แช็ตใหม่"><svg width="34" height="34" viewBox="0 0 24 24" fill="#000"><path d="M3 17.3V21h3.7L17.8 9.9l-3.7-3.7zM20.7 7a1 1 0 0 0 0-1.4l-2.3-2.3a1 1 0 0 0-1.4 0l-1.8 1.8 3.7 3.7z"/></svg></button>
 </section>
 
@@ -372,6 +378,7 @@ button:active{transform:scale(.92)}
   <div class="chead" id="chead">
     <button class="back" id="cvBack" aria-label="กลับ" style="margin:0"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H4m6-7-7 7 7 7"/></svg></button>
     <div id="cvHead" style="display:flex;align-items:center;gap:calc(26 * var(--u))"></div>
+    <button class="cvmenu" id="cvLeave" aria-label="ออกจากกลุ่ม" style="display:none"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#ff8a8a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h4M16 8l4 4-4 4M20 12H9"/></svg></button>
     <button class="cvmenu" id="cvBlock" aria-label="บล็อก"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#ff8a8a" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></svg></button>
   </div>
   <div class="msgs" id="msgs"></div>
@@ -406,6 +413,15 @@ button:active{transform:scale(.92)}
   <div class="grab"></div>
   <h3>เพื่อนของคุณ</h3>
   <div id="fsBody"></div>
+</div></div>
+
+<!-- CREATE GROUP -->
+<div class="sheetbg" id="grpBg" style="z-index:46"><div class="sheet">
+  <div class="grab"></div>
+  <h3>สร้างกลุ่ม</h3><p>ตั้งชื่อกลุ่มและเลือกเพื่อนที่จะเข้ากลุ่ม</p>
+  <div class="addrow"><input id="grpName" placeholder="ชื่อกลุ่ม" maxlength="30" autocomplete="off"></div>
+  <div id="grpList"></div>
+  <div class="sbtns"><button class="minibtn g" id="grpCancel">ยกเลิก</button><button class="btn" id="grpGo" disabled>สร้างกลุ่ม</button></div>
 </div></div>
 
 <!-- SEND TO -->
@@ -463,6 +479,35 @@ const MONTHS = ['มกราคม','กุมภาพันธ์','มีน
 const pad = n => String(n).padStart(2,'0');
 const dkey = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const LS = { get:(k,d)=>{try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}}, set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}} };
+
+/* ---------- Android back button: layers close one by one instead of leaving the app ---------- */
+const Nav = (() => {
+  const stack = []; let pend = 0; const q = [];
+  try{ history.replaceState({ auan: 0 }, ''); }catch(e){}
+  const flush = () => { while(!pend && q.length) q.shift()(); };
+  function open(id, close){
+    if(stack.some(l => l.id === id)) return;
+    if(pend){ q.push(() => open(id, close)); return; }
+    stack.push({ id, close });
+    try{ history.pushState({ auan: stack.length }, ''); }catch(e){}
+  }
+  function close(id){
+    const i = stack.findIndex(l => l.id === id); if(i < 0) return false;
+    const k = stack.length - i, ls = stack.splice(i, k).reverse();
+    ls.forEach(l => { try{ l.close(); }catch(e){} });
+    pend++; history.go(-k);
+    setTimeout(() => { if(pend){ pend = 0; flush(); } }, 900);
+    return true;
+  }
+  addEventListener('popstate', e => {
+    if(pend){ pend--; if(!pend) flush(); return; }
+    const depth = (e.state && e.state.auan) || 0;
+    while(stack.length > depth){ const l = stack.pop(); try{ l.close(); }catch(_){} }
+  });
+  return { open, close, has: id => stack.some(l => l.id === id) };
+})();
+window.Nav = Nav;
+
 let toastT;
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2600)}
 
@@ -496,7 +541,9 @@ async function reload(){
 
 /* ---------- navigation ---------- */
 let cur = 'home';
-function go(name){
+function go(name, fromNav){
+  if(name === 'home' && !fromNav && Nav.has('tab')){ Nav.close('tab'); return; }
+  if(name !== 'home' && !Nav.has('tab')) Nav.open('tab', () => go('home', true));
   cur = name;
   $$('.screen').forEach(s => s.classList.toggle('on', s.id === 's-'+name));
   $$('.nav button').forEach(b => b.classList.toggle('on', b.dataset.go === name));
@@ -507,8 +554,10 @@ $$('.nav button').forEach(b => b.onclick = () => go(b.dataset.go));
 $('#histBtn').onclick = () => go('mem');
 $('#btnCompose').onclick = () => toast('ระบบแช็ตยังไม่เปิดใช้ ต้องมีเซิร์ฟเวอร์ก่อน');
 $('#btnHint').onclick = () => toast('วิดเจ็ตหน้าจอหลักต้องใช้แอปมือถือจริง');
-$('#btnFriends').onclick = () => $('#sheetBg').classList.add('on');
-$('#sheetBg').onclick = e => { if(e.target === e.currentTarget) e.currentTarget.classList.remove('on'); };
+const closeFriendsUI = () => $('#sheetBg').classList.remove('on');
+window.openFriends = () => { $('#sheetBg').classList.add('on'); Nav.open('friends', closeFriendsUI); };
+$('#btnFriends').onclick = window.openFriends;
+$('#sheetBg').onclick = e => { if(e.target === e.currentTarget){ if(Nav.has('friends')) Nav.close('friends'); else closeFriendsUI(); } };
 
 /* ---------- camera ---------- */
 let stream = null, facing = 'environment', torchOn = false, camBusy = false;
@@ -557,6 +606,7 @@ async function showPreview(canvas){
   $('#pvImg').src = URL.createObjectURL(blob);
   $('#pvCap').value = '';
   $('#preview').classList.add('on'); document.body.classList.add('hidenav');
+  Nav.open('preview', closePreviewUI);
   if(window.onPreviewOpen) window.onPreviewOpen();
 }
 $('#btnShot').onclick = async () => {
@@ -573,7 +623,8 @@ $('#filePick').onchange = async e => {
   const f = e.target.files[0]; e.target.value=''; if(!f) return;
   try{ const bmp = await createImageBitmap(f); showPreview(squareCanvas(bmp, bmp.width, bmp.height, false)); }catch(err){ toast('เปิดรูปนี้ไม่ได้'); }
 };
-function closePreview(){ $('#preview').classList.remove('on'); document.body.classList.remove('hidenav'); pending=null; }
+function closePreviewUI(){ $('#preview').classList.remove('on'); document.body.classList.remove('hidenav'); pending=null; }
+function closePreview(){ if(Nav.has('preview')) Nav.close('preview'); else closePreviewUI(); }
 $('#pvCancel').onclick = closePreview;
 $('#pvSave').onclick = async () => {
   if(!pending) return;
@@ -638,7 +689,7 @@ function renderStats(){
 
 /* viewer */
 let vList = [], vIdx = 0, vUrl = '';
-function openViewer(k){ vList = byDay[k] || []; vIdx = vList.length-1; if(!vList.length) return; showV(); $('#viewer').classList.add('on'); document.body.classList.add('hidenav'); }
+function openViewer(k){ vList = byDay[k] || []; vIdx = vList.length-1; if(!vList.length) return; showV(); $('#viewer').classList.add('on'); document.body.classList.add('hidenav'); Nav.open('viewer', closeViewerUI); }
 function showV(){
   const p = vList[vIdx]; if(vUrl) URL.revokeObjectURL(vUrl);
   vUrl = URL.createObjectURL(p.blob); $('#vwImg').src = vUrl;
@@ -647,7 +698,8 @@ function showV(){
   const c = $('#vwCap'); c.style.display = p.caption ? '' : 'none'; c.textContent = p.caption || '';
   $('#vwPrev').style.visibility = $('#vwNext').style.visibility = vList.length>1 ? 'visible' : 'hidden';
 }
-$('#vwClose').onclick = () => { $('#viewer').classList.remove('on'); document.body.classList.remove('hidenav'); };
+function closeViewerUI(){ $('#viewer').classList.remove('on'); document.body.classList.remove('hidenav'); }
+$('#vwClose').onclick = () => { if(Nav.has('viewer')) Nav.close('viewer'); else closeViewerUI(); };
 $('#vwPrev').onclick = () => { vIdx = (vIdx-1+vList.length)%vList.length; showV(); };
 $('#vwNext').onclick = () => { vIdx = (vIdx+1)%vList.length; showV(); };
 $('#vwDl').onclick = () => download(vList[vIdx].blob, `auan-${vList[vIdx].date}-${vList[vIdx].ts}.jpg`);
@@ -666,8 +718,9 @@ function renderProfile(){
   $('#shareUrl').textContent = location.href.replace(/index\.html$/,'').replace(/^https?:\/\//,'');
   renderStats();
 }
-$$('[data-profile]').forEach(b => b.onclick = () => { $('#p-profile').classList.add('on'); document.body.classList.add('hidenav'); });
-$('#pBack').onclick = () => { $('#p-profile').classList.remove('on'); document.body.classList.remove('hidenav'); };
+function closeProfileUI(){ $('#p-profile').classList.remove('on'); document.body.classList.remove('hidenav'); }
+$$('[data-profile]').forEach(b => b.onclick = () => { $('#p-profile').classList.add('on'); document.body.classList.add('hidenav'); Nav.open('profile', closeProfileUI); });
+$('#pBack').onclick = () => { if(Nav.has('profile')) Nav.close('profile'); else closeProfileUI(); };
 $('#rowName').onclick = () => { const v = prompt('ชื่อของคุณ', settings.name); if(v && v.trim()){ settings.name=v.trim().slice(0,30); LS.set('auan_name',settings.name); renderProfile(); if(window.onProfileChanged) window.onProfileChanged(); } };
 $('#rowBday').onclick = () => { const v = prompt('วันเกิด (เช่น 15 มิถุนายน)', settings.bday); if(v!==null){ settings.bday=v.trim(); LS.set('auan_bday',settings.bday); renderProfile(); } };
 $('#rowStreak').onclick = () => { settings.streak=!settings.streak; LS.set('auan_streak',settings.streak); renderProfile(); };
@@ -687,7 +740,7 @@ $('#rowInstall').onclick = async () => {
   if(deferredInstall){ deferredInstall.prompt(); deferredInstall=null; }
   else toast('เปิดเมนูเบราว์เซอร์ แล้วเลือก "เพิ่มไปยังหน้าจอหลัก"');
 };
-$('#rowAbout').onclick = () => alert('Auan เวอร์ชัน 6 (แก้ส่งข้อความและรูป)\nถ่ายรูปแล้วเก็บเป็นความทรงจำรายวัน\nรูปในแอปเก็บในเครื่อง รูปที่ส่งให้เพื่อนเก็บบนเซิร์ฟเวอร์');
+$('#rowAbout').onclick = () => alert('Auan เวอร์ชัน 7 (กลุ่ม + ปุ่มย้อนกลับ)\nถ่ายรูปแล้วเก็บเป็นความทรงจำรายวัน\nรูปในแอปเก็บในเครื่อง รูปที่ส่งให้เพื่อนเก็บบนเซิร์ฟเวอร์');
 $('#rowClear').onclick = async () => { if(confirm('ลบรูปทั้งหมดในแอป? ย้อนกลับไม่ได้')){ await dbClear(); await reload(); toast('ลบรูปทั้งหมดแล้ว'); } };
 
 /* ---------- boot ---------- */
@@ -698,6 +751,6 @@ window.setProfile = o => { Object.assign(settings, o); if('name' in o) LS.set('a
 scaleSvgs(); renderProfile();
 reload().then(() => startCam());
 </script>
-<script type="module" src="cloud.js?v=6"></script>
+<script type="module" src="cloud.js?v=7"></script>
 </body>
 </html>
