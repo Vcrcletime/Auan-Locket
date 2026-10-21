@@ -359,6 +359,7 @@ button:active{transform:scale(.92)}
 
     <div class="sec">การตั้งค่า</div>
     <button class="row" id="rowStreak"><svg width="34" height="34" viewBox="0 0 24 24" fill="#bbb"><path d="M12 2.5c1 3-1 4-1 6 0 1.5 1 2 2 2s2-1 1.5-3c3 2 5 5 5 8a7.5 7.5 0 0 1-15 0c0-3 1.5-4.5 3-6 0 2 1 3 2 3 0-3 0-7 2.5-10z"/></svg>แสดง Streak<span class="switch on" id="swStreak"></span></button>
+    <button class="row" id="rowPush"><svg width="34" height="34" viewBox="0 0 24 24" fill="#bbb"><path d="M12 22a2.5 2.5 0 0 0 2.4-1.8H9.6A2.5 2.5 0 0 0 12 22zm7-6.2V11a7 7 0 0 0-5.5-6.8V3.5a1.5 1.5 0 0 0-3 0v.7A7 7 0 0 0 5 11v4.8l-1.7 1.7V19h17.4v-1.5z"/></svg><div>การแจ้งเตือนข้อความ<small id="pushSt"></small></div><span class="switch" id="swPush"></span></button>
     <button class="row" id="rowInstall"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m-5-5 5 5 5-5M5 20h14"/></svg><div>ติดตั้งแอป<small>เพิ่มลงหน้าจอหลัก</small></div></button>
 
     <div class="sec">ทั่วไป</div>
@@ -740,7 +741,7 @@ $('#rowInstall').onclick = async () => {
   if(deferredInstall){ deferredInstall.prompt(); deferredInstall=null; }
   else toast('เปิดเมนูเบราว์เซอร์ แล้วเลือก "เพิ่มไปยังหน้าจอหลัก"');
 };
-$('#rowAbout').onclick = () => alert('Auan เวอร์ชัน 7 (กลุ่ม + ปุ่มย้อนกลับ)\nถ่ายรูปแล้วเก็บเป็นความทรงจำรายวัน\nรูปในแอปเก็บในเครื่อง รูปที่ส่งให้เพื่อนเก็บบนเซิร์ฟเวอร์');
+$('#rowAbout').onclick = () => alert('Auan เวอร์ชัน 8 (แจ้งเตือน)\nถ่ายรูปแล้วเก็บเป็นความทรงจำรายวัน\nรูปในแอปเก็บในเครื่อง รูปที่ส่งให้เพื่อนเก็บบนเซิร์ฟเวอร์');
 $('#rowClear').onclick = async () => { if(confirm('ลบรูปทั้งหมดในแอป? ย้อนกลับไม่ได้')){ await dbClear(); await reload(); toast('ลบรูปทั้งหมดแล้ว'); } };
 
 /* ---------- boot ---------- */
@@ -751,6 +752,6 @@ window.setProfile = o => { Object.assign(settings, o); if('name' in o) LS.set('a
 scaleSvgs(); renderProfile();
 reload().then(() => startCam());
 </script>
-<script type="module" src="cloud.js?v=7"></script>
+<script type="module" src="cloud.js?v=8"></script>
 </body>
 </html>

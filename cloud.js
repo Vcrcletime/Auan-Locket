@@ -1,6 +1,7 @@
-import { firebaseConfig } from './firebase-config.js';
+import * as cfg from './firebase-config.js';
+const firebaseConfig = cfg.firebaseConfig, pushConfig = cfg.pushConfig || {};
 
-if(!document.querySelector('#cvPill') || !document.querySelector('#rx') || !document.querySelector('#btnGroup') || !window.Nav){
+if(!document.querySelector('#rowPush') || !document.querySelector('#cvPill') || !document.querySelector('#rx') || !document.querySelector('#btnGroup') || !window.Nav){
   if(window.toast) window.toast('index.html เป็นเวอร์ชันเก่า ให้อัปโหลดทับด้วยไฟล์ล่าสุด');
   throw new Error('index.html is outdated');
 }
@@ -78,13 +79,13 @@ async function onUser(u){
     if(st.name === 'Auan' && u.displayName) window.setProfile({ name: u.displayName });
     if(!meDoc || !meDoc.username) await claimUsername();
     await syncProfile();
-    listenFriendships(); listenBlocks(); listenGroups();
+    listenFriendships(); listenBlocks(); listenGroups(); refreshPush();
   }catch(e){ toast(errMsg(e)); }
   renderAll();
 }
 function cleanup(){
   if(unsubF) unsubF(); if(unsubM) unsubM(); if(unsubB) unsubB(); if(unsubG) unsubG(); unsubF = unsubM = unsubB = unsubG = null;
-  friendships = {}; groups = {}; blocks = {}; people = {}; curFid = null;
+  friendships = {}; groups = {}; blocks = {}; people = {}; curFid = null; firstF = firstG = true;
   $('#p-convo').classList.remove('on'); document.body.classList.remove('hidenav');
 }
 async function syncProfile(){
@@ -120,12 +121,14 @@ async function loadPerson(uid){
   catch(e){ people[uid] = { name: 'ผู้ใช้' }; }
   return people[uid];
 }
+let firstF = true, firstG = true;
 function listenFriendships(){
   unsubF = F.onSnapshot(F.query(F.collection(db, 'friendships'), F.where('members', 'array-contains', me.uid)), async snap => {
     friendships = {};
     snap.forEach(d => friendships[d.id] = { id: d.id, ...d.data() });
     await Promise.all(Object.values(friendships).map(f => loadPerson(other(f))));
     if(curFid && curType === 'dm' && !friendships[curFid]){ closeConvo(); toast('บทสนทนานี้ไม่มีแล้ว'); }
+    checkIncoming(accepted(), 'dm', firstF); firstF = false;
     renderAll();
   }, () => toast('โหลดรายชื่อเพื่อนไม่ได้'));
 }
@@ -135,6 +138,7 @@ function listenGroups(){
     snap.forEach(d => groups[d.id] = { id: d.id, ...d.data() });
     await Promise.all(Object.values(groups).flatMap(g => g.members.map(loadPerson)));
     if(curFid && curType === 'g' && !groups[curFid]){ closeConvo(); toast('กลุ่มนี้ไม่มีแล้ว'); }
+    checkIncoming(Object.values(groups), 'g', firstG); firstG = false;
     renderAll();
   }, () => {});
 }
@@ -329,10 +333,11 @@ function renderMsgs(){
 
 /* write a message + update the chat preview */
 async function post(type, id, data, preview){
-  await F.addDoc(msgCol(type, id), { from: me.uid, ts: F.serverTimestamp(), ...data });
+  const ref = await F.addDoc(msgCol(type, id), { from: me.uid, ts: F.serverTimestamp(), ...data });
   const last = { text: preview, from: me.uid, ts: F.serverTimestamp() };
   if(type === 'g') last.name = window.getSettings().name;
   await F.updateDoc(chatDoc(type, id), { last });
+  notifyPeers(type, id, ref.id);
 }
 
 /* send text / quick emoji */
@@ -447,7 +452,7 @@ const TH = { 'หัวใจ': 'heart', 'รัก': 'heart', 'ยิ้ม': '
 const closeEmoUI = () => $('#emo').classList.remove('on');
 const closeEmo = () => Nav.has('emo') ? Nav.close('emo') : closeEmoUI();
 async function openPicker(cb){
-  try{ if(!emoData) emoData = (await import('./emoji.js?v=7')).EMOJI; }catch(e){ toast('โหลดอีโมจิไม่ได้'); return; }
+  try{ if(!emoData) emoData = (await import('./emoji.js?v=8')).EMOJI; }catch(e){ toast('โหลดอีโมจิไม่ได้'); return; }
   pickCb = cb; $('#emoSearch').value = '';
   $('#emoTabs').innerHTML = emoData.cats.map(c => `<button data-c="${c.id}" aria-label="${c.title}">${c.icon}</button>`).join('');
   drawEmoji(emoCat); $('#emo').classList.add('on'); Nav.open('emo', closeEmoUI);
@@ -560,7 +565,91 @@ function updatePill(){
   const n = me ? accepted().length : 0;
   $('#pillTxt').textContent = n ? `${n} เพื่อน` : 'ฉันคนเดียว';
 }
-function renderAll(){ renderChat(); renderFriends(); renderAcct(); updatePill(); }
+function renderAll(){ renderChat(); renderFriends(); renderAcct(); updatePill(); renderPushRow(); tryOpenPending(); }
+
+/* ---------- notifications ---------- */
+const lastSeen = {};
+function checkIncoming(list, type, first){
+  list.forEach(ch => {
+    const key = type + ':' + ch.id, l = ch.last, ts = l ? msOf(l.ts) : 0, prev = lastSeen[key] || 0;
+    lastSeen[key] = ts;
+    if(first || !l || !ts || ts <= prev || l.from === me.uid) return;
+    if(curFid === ch.id && curType === type && document.visibilityState === 'visible') return;
+    const who = type === 'g' ? (l.name || '') : ((people[other(ch)] || {}).name || '');
+    const title = type === 'g' ? `${ch.name} · ${who}` : who;
+    toast(l.text === '📷 รูปภาพ' ? `${title} ส่งรูปภาพมา` : `${title}: ${l.text}`);
+  });
+}
+const pushReady = () => !!(pushConfig.workerUrl && pushConfig.vapidPublicKey);
+const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+const b64uToU8 = s => { s = s.replace(/-/g, '+').replace(/_/g, '/'); while(s.length % 4) s += '='; return Uint8Array.from(atob(s), ch => ch.charCodeAt(0)); };
+async function saveSub(sub){
+  const json = sub.toJSON(), ref = F.doc(db, 'pushSubs', me.uid), snap = await F.getDoc(ref);
+  const cur = snap.exists() ? (snap.data().subs || []) : [];
+  const keep = cur.filter(s => { try{ return JSON.parse(s).endpoint !== json.endpoint; }catch(_){ return false; } });
+  keep.push(JSON.stringify(json));
+  await F.setDoc(ref, { subs: keep.slice(-5), updatedAt: F.serverTimestamp() }, { merge: true });
+}
+async function enablePush(){
+  if(!me){ toast('เข้าสู่ระบบก่อน'); return; }
+  if(!pushSupported()){ toast('เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือน'); return; }
+  if(!pushReady()){ toast('ยังไม่ได้ตั้งค่าเซิร์ฟเวอร์แจ้งเตือน (ดูคู่มือ)'); return; }
+  const perm = await Notification.requestPermission();
+  if(perm !== 'granted'){ toast('ต้องกดอนุญาตการแจ้งเตือนก่อน'); renderPushRow(); return; }
+  const reg = await navigator.serviceWorker.ready;
+  let sub = await reg.pushManager.getSubscription();
+  if(!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uToU8(pushConfig.vapidPublicKey) });
+  await saveSub(sub);
+  localStorage.setItem('auan_push', '1'); renderPushRow(); toast('เปิดการแจ้งเตือนแล้ว');
+}
+async function disablePush(){
+  localStorage.setItem('auan_push', '0');
+  try{
+    const reg = await navigator.serviceWorker.ready, sub = await reg.pushManager.getSubscription();
+    if(sub && me){
+      const ep = sub.endpoint, ref = F.doc(db, 'pushSubs', me.uid), snap = await F.getDoc(ref);
+      if(snap.exists()) await F.setDoc(ref, { subs: (snap.data().subs || []).filter(s => { try{ return JSON.parse(s).endpoint !== ep; }catch(_){ return false; } }) }, { merge: true });
+      await sub.unsubscribe();
+    }
+  }catch(e){}
+  renderPushRow(); toast('ปิดการแจ้งเตือนแล้ว');
+}
+async function refreshPush(){
+  try{
+    if(!pushSupported() || !pushReady() || localStorage.getItem('auan_push') !== '1' || Notification.permission !== 'granted') return;
+    const reg = await navigator.serviceWorker.ready, sub = await reg.pushManager.getSubscription();
+    if(sub) await saveSub(sub);
+  }catch(e){}
+}
+function renderPushRow(){
+  const sw = $('#swPush'), st = $('#pushSt'); if(!sw || !st) return;
+  const supported = pushSupported(), on = !!me && supported && localStorage.getItem('auan_push') === '1' && Notification.permission === 'granted';
+  sw.classList.toggle('on', on);
+  st.textContent = !pushReady() ? 'ยังไม่ได้ตั้งค่าเซิร์ฟเวอร์แจ้งเตือน' : !supported ? 'เบราว์เซอร์นี้ไม่รองรับ' : on ? 'เปิดอยู่ · บอกว่าใครส่งข้อความหรือรูปมา' : (Notification.permission === 'denied' ? 'ถูกบล็อกในการตั้งค่าเบราว์เซอร์' : 'ปิดอยู่');
+}
+async function notifyPeers(type, id, mid){
+  if(!pushReady()) return;
+  try{
+    const tok = await auth.currentUser.getIdToken();
+    fetch(pushConfig.workerUrl.replace(/\/$/, '') + '/notify', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok }, body: JSON.stringify({ type, id, mid }), keepalive: true }).catch(() => {});
+  }catch(e){}
+}
+$('#rowPush').onclick = async () => {
+  try{ if($('#swPush').classList.contains('on')) await disablePush(); else await enablePush(); }
+  catch(e){ toast('ตั้งค่าแจ้งเตือนไม่สำเร็จ: ' + (e.message || e.code)); }
+};
+
+/* open the right chat when a notification is tapped */
+let pendingOpen = null;
+{ const q = new URLSearchParams(location.search).get('chat');
+  if(q){ const i = q.indexOf(':'); pendingOpen = { type: q.slice(0, i), id: q.slice(i + 1) }; try{ history.replaceState(history.state, '', location.pathname); }catch(e){} } }
+if('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => { if(e.data && e.data.openChat){ pendingOpen = e.data.openChat; tryOpenPending(); } });
+function tryOpenPending(){
+  if(!pendingOpen || !me) return;
+  const { type, id } = pendingOpen, ok = type === 'g' ? groups[id] : friendships[id];
+  if(!ok) return;
+  pendingOpen = null; if(window.go) window.go('chat'); openConvo(id, type === 'g' ? 'g' : 'dm');
+}
 
 /* ---------- events ---------- */
 buildStatic();
